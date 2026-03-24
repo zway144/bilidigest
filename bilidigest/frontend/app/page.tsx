@@ -70,15 +70,17 @@ export default function App() {
   return (
     <div className="h-full flex">
       {/* ── SIDEBAR ── */}
-      <aside className="w-[220px] flex-shrink-0 flex flex-col" style={{ background: "var(--sidebar-bg)" }}>
+      <aside className="w-[214px] flex-shrink-0 flex flex-col" style={{ background: "var(--sidebar-bg)", borderRight: "1px solid var(--border2)" }}>
         {/* Logo */}
-        <div className="px-5 pt-6 pb-5">
-          <h1 className="text-[22px] font-bold tracking-tight gradient-text">BiliDigest</h1>
-          <p className="text-[11px] mt-1" style={{ color: "var(--sidebar-text)" }}>B站视频知识资产系统</p>
+        <div className="px-5 pt-6 pb-5" style={{ borderBottom: "1px solid var(--border)" }}>
+          <h1 className="font-display text-[20px] font-bold tracking-tight" style={{ fontFamily: "'Fraunces', Georgia, serif", color: "var(--text-primary)" }}>
+            Bili<i style={{ color: "var(--accent)", fontStyle: "italic" }}>Digest</i>
+          </h1>
+          <div style={{ width: 22, height: 3, background: "var(--accent)", borderRadius: 2, marginTop: 8, opacity: 0.55 }} />
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 space-y-0.5">
+        <nav className="flex-1 px-2 py-3 space-y-0.5">
           <NavItem
             icon={<IconPen />} label="新总结"
             active={page === "new"}
@@ -91,8 +93,8 @@ export default function App() {
             badge={assets.length || undefined}
           />
 
-          <div className="pt-5 pb-2 px-3">
-            <p className="text-[10px] font-medium uppercase tracking-[0.15em]" style={{ color: "var(--sidebar-text)" }}>
+          <div className="pt-4 pb-1 px-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: "var(--text-faint)" }}>
               资产产出
             </p>
           </div>
@@ -114,18 +116,19 @@ export default function App() {
         </nav>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-white/5">
-          <p className="text-[10px]" style={{ color: "var(--sidebar-text)" }}>v0.3.0 · BiliDigest</p>
+        <div className="px-5 py-4" style={{ borderTop: "1px solid var(--border)" }}>
+          <p className="text-[11px] font-medium tracking-[0.04em]" style={{ color: "var(--text-faint)" }}>BiliDigest · v0.3</p>
         </div>
       </aside>
 
       {/* ── MAIN ── */}
       <main className="flex-1 overflow-y-auto">
         {connError && (
-          <div className="mx-6 mt-4 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl flex items-center gap-2 animate-in">
+          <div className="mx-6 mt-4 text-sm px-4 py-3 rounded-xl flex items-center gap-2 animate-in"
+            style={{ background: "rgba(192,68,58,.06)", border: "1px solid rgba(192,68,58,.2)", color: "var(--red)" }}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 10.5a.75.75 0 110-1.5.75.75 0 010 1.5zM8.75 4.5v4a.75.75 0 01-1.5 0v-4a.75.75 0 011.5 0z"/></svg>
             <span>后端连接异常：{connError}</span>
-            <button onClick={refreshList} className="ml-auto text-xs text-red-500 hover:text-red-700 underline">重试</button>
+            <button onClick={refreshList} className="ml-auto text-xs underline" style={{ color: "var(--red)" }}>重试</button>
           </div>
         )}
 
@@ -154,20 +157,23 @@ function NavItem({ icon, label, active, onClick, badge }: {
   return (
     <button
       onClick={onClick}
-      className={`nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-[13px] ${
-        active
-          ? "active text-white font-medium"
-          : "hover:bg-white/[0.04]"
-      }`}
+      className={`nav-item w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] transition-all ${active ? "active" : ""}`}
       style={{
         color: active ? "var(--sidebar-text-active)" : "var(--sidebar-text)",
         background: active ? "var(--sidebar-active)" : undefined,
+        fontWeight: active ? 700 : 500,
       }}
+      onMouseEnter={e => { if (!active) e.currentTarget.style.background = "var(--sidebar-hover)"; }}
+      onMouseLeave={e => { if (!active) e.currentTarget.style.background = ""; }}
     >
-      <span className="w-5 h-5 flex items-center justify-center opacity-80">{icon}</span>
+      <span className="w-[15px] h-[15px] flex items-center justify-center flex-shrink-0"
+        style={{ opacity: active ? 1 : 0.35, color: active ? "var(--accent)" : undefined }}>
+        {icon}
+      </span>
       <span className="flex-1 text-left truncate">{label}</span>
       {badge !== undefined && (
-        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10">{badge}</span>
+        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+          style={{ background: "var(--accent-light)", color: "var(--accent)" }}>{badge}</span>
       )}
     </button>
   );
@@ -210,17 +216,17 @@ function NewSummaryPage({ onCreated }: { onCreated: (id: string) => void }) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-8 py-20">
+    <div className="max-w-2xl mx-auto px-8 py-16">
       <div className="mb-10">
-        <h2 className="text-3xl font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>
-          提取视频知识
+        <h2 className="text-[28px] font-bold tracking-tight" style={{ fontFamily: "'Fraunces', Georgia, serif", color: "var(--text-primary)" }}>
+          新总结
         </h2>
-        <p className="text-sm mt-2" style={{ color: "var(--text-secondary)" }}>
+        <p className="text-sm mt-2 font-normal" style={{ color: "var(--text-muted)" }}>
           粘贴 B 站视频链接，自动提取转写文本、关键帧和结构化知识
         </p>
       </div>
 
-      <div className="bg-white rounded-2xl border p-7 shadow-sm" style={{ borderColor: "var(--border)" }}>
+      <div className="rounded-2xl p-7" style={{ background: "var(--card)", border: "1.5px solid var(--border2)", boxShadow: "0 1px 4px rgba(60,50,30,.06)" }}>
         <textarea
           className="w-full border rounded-xl px-4 py-3.5 text-sm outline-none resize-none h-28 input-glow transition-all"
           style={{ borderColor: "var(--border)" }}
@@ -278,70 +284,247 @@ function NewSummaryPage({ onCreated }: { onCreated: (id: string) => void }) {
    PAGE: 资产库
    ═══════════════════════════════════════════════════════ */
 function LibraryPage({ assets, onSelect, onRefresh }: { assets: any[]; onSelect: (id: string) => void; onRefresh: () => void }) {
+  const [search, setSearch] = useState("");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (!confirm("确认删除？")) return;
     try { await deleteAsset(id); onRefresh(); } catch {}
   };
 
+  // filter + sort
+  const filtered = assets
+    .filter(a => {
+      const q = search.toLowerCase();
+      if (!q) return true;
+      return (a.title || "").toLowerCase().includes(q) || (a.author || "").toLowerCase().includes(q);
+    })
+    .sort((a, b) => {
+      const ta = new Date(a.created_at).getTime();
+      const tb = new Date(b.created_at).getTime();
+      return sortOrder === "newest" ? tb - ta : ta - tb;
+    });
+
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const showPager = filtered.length > pageSize;
+
+  // reset to page 1 on filter change
+  const handleSearch = (v: string) => { setSearch(v); setPage(1); };
+  const handleSort = (v: "newest" | "oldest") => { setSortOrder(v); setPage(1); };
+  const handlePageSize = (v: number) => { setPageSize(v); setPage(1); };
+
   return (
-    <div className="max-w-5xl mx-auto px-8 py-10">
-      <div className="flex items-center justify-between mb-8">
+    <div className="px-8 py-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">资产库</h2>
-          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>{assets.length} 个视频资产</p>
+          <h2 className="text-[26px] font-bold tracking-tight" style={{ fontFamily: "'Fraunces', Georgia, serif", color: "var(--text-primary)" }}>资产库</h2>
+          <p className="text-[12.5px] mt-1 font-medium" style={{ color: "var(--text-faint)" }}>共 {filtered.length} 个视频资产</p>
         </div>
       </div>
 
-      {assets.length === 0 ? (
+      {/* Toolbar */}
+      <div className="flex items-center gap-3 mb-5">
+        <div className="relative flex-1 max-w-sm">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input
+            type="text"
+            value={search}
+            onChange={e => handleSearch(e.target.value)}
+            placeholder="搜索标题或UP主..."
+            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border outline-none transition-all"
+            style={{ borderColor: "var(--border)", background: "var(--card)", color: "var(--text-primary)" }}
+            onFocus={e => e.currentTarget.style.borderColor = "var(--accent)"}
+            onBlur={e => e.currentTarget.style.borderColor = "var(--border)"}
+          />
+        </div>
+        <select
+          value={sortOrder}
+          onChange={e => handleSort(e.target.value as "newest" | "oldest")}
+          className="text-sm px-3 py-2 rounded-lg border outline-none cursor-pointer"
+          style={{ borderColor: "var(--border)", background: "var(--card)", color: "var(--text-primary)" }}
+        >
+          <option value="newest">最新优先</option>
+          <option value="oldest">最早优先</option>
+        </select>
+      </div>
+
+      {/* List */}
+      {filtered.length === 0 ? (
         <div className="text-center py-24">
-          <div className="text-5xl mb-4 opacity-40">📹</div>
-          <p style={{ color: "var(--text-muted)" }}>还没有视频资产</p>
-          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>前往「新总结」提交视频链接</p>
+          <div className="text-5xl mb-4 opacity-30">📹</div>
+          <p style={{ color: "var(--text-muted)" }}>{search ? "没有匹配的视频" : "还没有视频资产"}</p>
+          {!search && <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>前往「新总结」提交视频链接</p>}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {assets.map((a, i) => (
-            <div
-              key={a.id}
-              onClick={() => onSelect(a.id)}
-              className="card-hover bg-white rounded-xl border overflow-hidden cursor-pointer"
-              style={{ borderColor: "var(--border)", animationDelay: `${i * 50}ms` }}
-            >
-              <div className="flex gap-4 p-4">
-                <div className="w-36 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
-                  {a.thumbnail_url ? (
-                    <img src={a.thumbnail_url} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-300 text-3xl">▶</div>
-                  )}
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: "var(--border)", background: "var(--card)" }}>
+          {paginated.map((a, i) => {
+            const preview: string = a.summary_preview || "";
+            const tags: string[] = Array.isArray(a.tags) ? a.tags.slice(0, 4) : [];
+
+            return (
+              <div
+                key={a.id}
+                className="flex items-stretch gap-0 group transition-colors"
+                style={{
+                  borderBottom: i < paginated.length - 1 ? `1px solid var(--border)` : "none",
+                  minHeight: "200px",
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = "var(--bg)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              >
+                {/* ── 左栏：封面 200px ── */}
+                <div
+                  className="flex-shrink-0 cursor-pointer p-4"
+                  style={{ width: "220px" }}
+                  onClick={() => onSelect(a.id)}
+                >
+                  <div className="rounded-lg overflow-hidden" style={{ aspectRatio: "16/9", background: "var(--bg)" }}>
+                    {a.thumbnail_url ? (
+                      <img src={a.thumbnail_url} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-2xl opacity-20">▶</div>
+                    )}
+                  </div>
+                  <p className="text-xs text-center mt-1.5" style={{ color: "var(--text-muted)" }}>{fmtDur(a.duration)}</p>
                 </div>
-                <div className="flex-1 min-w-0 flex flex-col">
-                  <p className="font-medium text-sm leading-snug line-clamp-2" style={{ color: "var(--text-primary)" }}>
+
+                {/* 竖分隔线 */}
+                <div className="w-px flex-shrink-0 self-stretch" style={{ background: "var(--border)" }} />
+
+                {/* ── 中栏：标题+元信息 30% ── */}
+                <div
+                  className="flex flex-col justify-center gap-2 px-5 py-4 cursor-pointer"
+                  style={{ width: "30%" }}
+                  onClick={() => onSelect(a.id)}
+                >
+                  <p className="font-semibold text-sm leading-snug line-clamp-3 transition-colors group-hover:text-[var(--accent)]" style={{ color: "var(--text-primary)" }}>
                     {a.title || a.id}
                   </p>
-                  <p className="text-xs mt-1.5" style={{ color: "var(--text-secondary)" }}>
-                    {a.author} · {fmtDur(a.duration)}
-                  </p>
-                  <div className="flex items-center gap-3 mt-auto pt-2">
-                    <span className="flex items-center gap-1.5 text-xs" style={{ color: "var(--text-secondary)" }}>
-                      <span className={`w-2 h-2 rounded-full ${STATUS_COLOR[a.status] || "bg-[var(--blue)]"} ${PROCESSING.includes(a.status) ? "pulse-dot" : ""}`} />
-                      {STATUS_LABEL[a.status] || a.status}
-                    </span>
-                    <button
-                      onClick={(e) => handleDelete(e, a.id)}
-                      className="text-xs ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
-                      style={{ color: "var(--text-muted)" }}
-                      onMouseOver={e => (e.target as HTMLElement).style.color = "var(--red)"}
-                      onMouseOut={e => (e.target as HTMLElement).style.color = "var(--text-muted)"}
-                    >
-                      删除
-                    </button>
+                  <div className="text-xs space-y-1" style={{ color: "var(--text-secondary)" }}>
+                    <p>{a.author}</p>
+                    <p>{a.created_at ? a.created_at.slice(0, 10) : ""}</p>
                   </div>
+                  <span className="flex items-center gap-1.5 text-xs w-fit" style={{ color: "var(--text-secondary)" }}>
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_COLOR[a.status] || "bg-[var(--blue)]"} ${PROCESSING.includes(a.status) ? "pulse-dot" : ""}`} />
+                    {STATUS_LABEL[a.status] || a.status}
+                  </span>
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {tags.map(tag => (
+                        <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: "var(--bg)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    onClick={e => handleDelete(e, a.id)}
+                    className="text-[11px] w-fit mt-auto opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded"
+                    style={{ color: "var(--text-muted)" }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "var(--red)"; e.currentTarget.style.background = "rgba(239,68,68,0.06)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}
+                  >删除</button>
+                </div>
+
+                {/* 竖分隔线 */}
+                <div className="w-px flex-shrink-0 self-stretch" style={{ background: "var(--border)" }} />
+
+                {/* ── 右栏：总结笔记（滚动） ── */}
+                <div className="flex-1 flex flex-col px-5 py-4 min-w-0">
+                  <p className="text-xs font-medium mb-2 flex-shrink-0" style={{ color: "var(--text-secondary)" }}>总结笔记</p>
+                  {preview ? (
+                    <>
+                      <div
+                        className="flex-1 pr-1"
+                        style={{
+                          height: "150px",
+                          overflowY: "auto",
+                          scrollbarWidth: "thin",
+                          scrollbarColor: "var(--border) transparent",
+                        }}
+                      >
+                        <p style={{ fontSize: "14px", color: "var(--text-muted)", lineHeight: "1.7" }}>{preview}</p>
+                      </div>
+                      <button
+                        onClick={() => onSelect(a.id)}
+                        className="mt-3 text-xs w-fit flex-shrink-0 px-3 py-1.5 rounded-lg border transition-colors"
+                        style={{ color: "var(--accent)", borderColor: "var(--accent)", background: "transparent" }}
+                        onMouseEnter={e => { e.currentTarget.style.background = "var(--accent)"; e.currentTarget.style.color = "white"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--accent)"; }}
+                      >查看完整总结 →</button>
+                    </>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center">
+                      {PROCESSING.includes(a.status) ? (
+                        <p className="text-xs" style={{ color: "var(--text-muted)" }}>处理中，稍后自动生成…</p>
+                      ) : (
+                        <button
+                          onClick={() => onSelect(a.id)}
+                          className="text-xs px-3 py-1.5 rounded-lg border transition-colors"
+                          style={{ color: "var(--text-muted)", borderColor: "var(--border)" }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.color = "var(--accent)"; }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-muted)"; }}
+                        >尚未生成总结，点击进入生成</button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {showPager && (
+        <div className="flex items-center justify-between mt-5 text-sm">
+          <div className="flex items-center gap-2" style={{ color: "var(--text-muted)" }}>
+            <span>每页</span>
+            <select
+              value={pageSize}
+              onChange={e => handlePageSize(Number(e.target.value))}
+              className="text-sm px-2 py-1 rounded border outline-none"
+              style={{ borderColor: "var(--border)", background: "var(--card)", color: "var(--text-primary)" }}
+            >
+              {[10, 20, 30].map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+            <span>条</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-3 py-1.5 rounded-lg border text-xs transition-colors disabled:opacity-30"
+              style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
+              onMouseEnter={e => { if (page > 1) e.currentTarget.style.borderColor = "var(--accent)"; }}
+              onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
+            >← 上一页</button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
+              <button
+                key={n}
+                onClick={() => setPage(n)}
+                className="w-8 h-8 rounded-lg text-xs transition-colors"
+                style={{
+                  background: n === page ? "var(--accent)" : "transparent",
+                  color: n === page ? "white" : "var(--text-secondary)",
+                  border: n === page ? "none" : `1px solid var(--border)`,
+                }}
+              >{n}</button>
+            ))}
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="px-3 py-1.5 rounded-lg border text-xs transition-colors disabled:opacity-30"
+              style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
+              onMouseEnter={e => { if (page < totalPages) e.currentTarget.style.borderColor = "var(--accent)"; }}
+              onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
+            >下一页 →</button>
+          </div>
         </div>
       )}
     </div>
@@ -962,7 +1145,7 @@ function HistoryPage({ mode, assets }: { mode?: string; assets?: any[] }) {
   return (
     <div className="max-w-5xl mx-auto px-8 py-10">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold tracking-tight">{modeLabel}</h2>
+        <h2 className="text-[26px] font-bold tracking-tight" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>{modeLabel}</h2>
         <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>选择视频资产生成内容，或查看历史记录</p>
       </div>
 

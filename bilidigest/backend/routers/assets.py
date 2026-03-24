@@ -63,13 +63,30 @@ async def list_assets():
             t_count = db.execute("SELECT COUNT(*) FROM transcripts WHERE asset_id=?", (row["id"],)).fetchone()[0]
             k_count = db.execute("SELECT COUNT(*) FROM keyframes WHERE asset_id=?", (row["id"],)).fetchone()[0]
             kn_count = db.execute("SELECT COUNT(DISTINCT knowledge_type) FROM structured_knowledge WHERE asset_id=?", (row["id"],)).fetchone()[0]
-            assets.append(AssetBrief(
+            # 摘要预览：从 generation_history 取最新一条 mode=summary 的 abstract
+            summary_preview = ""
+            gen_row = db.execute(
+                "SELECT output_content FROM generation_history WHERE asset_ids LIKE ? AND mode='summary' ORDER BY created_at DESC LIMIT 1",
+                (f'%"{row["id"]}"%',)
+            ).fetchone()
+            if gen_row:
+                try:
+                    import json as _json
+                    gen_content = _json.loads(gen_row["output_content"])
+                    summary_preview = (gen_content.get("abstract") or "")[:300]
+                except Exception:
+                    pass
+
+            brief = AssetBrief(
                 id=row["id"], title=row["title"], author=row["author"],
                 duration=row["duration"], thumbnail_url=row["thumbnail_url"],
                 status=row["status"], created_at=row["created_at"],
                 transcript_count=t_count, keyframe_count=k_count, knowledge_count=kn_count
-            ))
-        return {"assets": [a.model_dump() for a in assets]}
+            )
+            d = brief.model_dump()
+            d["summary_preview"] = summary_preview
+            assets.append(d)
+        return {"assets": assets}
     finally:
         db.close()
 
