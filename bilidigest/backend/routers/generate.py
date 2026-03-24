@@ -298,3 +298,18 @@ async def get_history(history_id: int):
         }
     finally:
         db.close()
+
+
+@router.delete("/history/{history_id}")
+async def delete_history(history_id: int):
+    """删除单条历史记录"""
+    db = get_db()
+    try:
+        row = db.execute("SELECT id FROM generation_history WHERE id = ?", (history_id,)).fetchone()
+        if not row:
+            raise HTTPException(404, "记录不存在")
+        db.execute("DELETE FROM generation_history WHERE id = ?", (history_id,))
+        db.commit()
+        return {"message": "已删除", "id": history_id}
+    finally:
+        db.close()

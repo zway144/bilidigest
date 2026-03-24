@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   createAsset, listAssets, getAsset, deleteAsset,
-  generateContent, queryAsset, listHistory, getCachedGeneration, BASE_URL,
+  generateContent, queryAsset, listHistory, deleteHistory, getCachedGeneration, BASE_URL,
 } from "@/lib/api";
 
 /* ─── Constants ─────────────────────────────────────── */
@@ -624,6 +624,11 @@ function DetailPage({ asset, onBack, onDelete, onRefresh }: {
   // iframe src state for in-page time jumping
   const [iframeSrc, setIframeSrc] = useState(`//player.bilibili.com/player.html?bvid=${asset.id}&autoplay=0&danmaku=0&high_quality=1`);
 
+  // asset 切换时重置 iframe src
+  useEffect(() => {
+    setIframeSrc(`//player.bilibili.com/player.html?bvid=${asset.id}&autoplay=0&danmaku=0&high_quality=1`);
+  }, [asset.id]);
+
   // 时间戳点击：页面内跳转（更新 iframe src）
   const handleTimeClick = (timeStr: string) => {
     const parts = timeStr.split(":");
@@ -1122,6 +1127,15 @@ function HistoryPage({ mode, assets }: { mode?: string; assets?: any[] }) {
     }).catch(() => setLoading(false));
   }, [mode]);
 
+  const handleDeleteHistory = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    if (!confirm("确定删除这条记录？")) return;
+    try {
+      await deleteHistory(id);
+      setItems(prev => prev.filter(item => item.id !== id));
+    } catch {}
+  };
+
   const modeLabel = mode === "summary" ? "图文总结笔记" : mode === "xiaohongshu" ? "小红书图文" : mode === "mindmap" ? "知识树" : "所有记录";
 
   // 查看单条记录详情
@@ -1226,7 +1240,7 @@ function HistoryPage({ mode, assets }: { mode?: string; assets?: any[] }) {
         <div className="space-y-3">
           {items.map((item, i) => (
             <div key={item.id} onClick={() => setSelectedItem(item)}
-              className="card-hover bg-white rounded-xl border p-4 cursor-pointer animate-in"
+              className="card-hover group bg-white rounded-xl border p-4 cursor-pointer animate-in"
               style={{ borderColor: "var(--border)", animationDelay: `${i * 40}ms` }}
             >
               <div className="flex items-start justify-between gap-4">
@@ -1245,7 +1259,16 @@ function HistoryPage({ mode, assets }: { mode?: string; assets?: any[] }) {
                   <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{item.asset_titles}</p>
                   {item.preview && <p className="text-xs mt-1.5 line-clamp-2 leading-relaxed" style={{ color: "var(--text-muted)" }}>{item.preview}</p>}
                 </div>
-                <p className="text-[10px] flex-shrink-0" style={{ color: "var(--text-muted)" }}>{item.created_at?.slice(0, 16)}</p>
+                <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                  <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{item.created_at?.slice(0, 16)}</p>
+                  <button
+                    onClick={e => handleDeleteHistory(e, item.id)}
+                    className="text-[11px] px-2 py-0.5 rounded transition-colors opacity-0 group-hover:opacity-100"
+                    style={{ color: "var(--text-muted)" }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "var(--red)"; e.currentTarget.style.background = "rgba(192,68,58,.06)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}
+                  >删除</button>
+                </div>
               </div>
             </div>
           ))}

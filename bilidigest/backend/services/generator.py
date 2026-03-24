@@ -57,14 +57,13 @@ def _build_context(asset: dict) -> str:
 
 
 def _build_keyframe_list(asset: dict) -> list[dict]:
-    """构建关键帧列表，带完整 URL 路径"""
-    bv_id = asset["id"]
+    """构建关键帧列表，带完整 URL 路径（兼容多视频融合）"""
     keyframes = sorted(asset.get("keyframes", []), key=lambda k: k.get("timestamp", 0))
     result = []
     for kf in keyframes:
         ts = _fmt_time(kf["timestamp"])
-        file_name = kf.get("file_path", "").split("/")[-1]
-        url = f"/static/assets/{bv_id}/keyframes/{file_name}"
+        # 直接用 file_path（格式 BVxxx/keyframes/frame_XXXX.jpg），兼容多视频融合
+        url = f"/static/assets/{kf.get('file_path', '')}"
         result.append({"timestamp": kf["timestamp"], "time_str": ts, "url": url})
     return result
 

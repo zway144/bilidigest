@@ -92,3 +92,9 @@ export async function getHistory(id: number) {
   if (!res.ok) throw new Error("获取历史记录详情失败");
   return res.json();
 }
+
+export async function deleteHistory(id: number) {
+  const res = await fetchWithTimeout(`${BASE_URL}/api/history/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("删除失败");
+  return res.json();
+}
