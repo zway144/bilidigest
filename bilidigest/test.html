@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BiliDigest - B站视频知识资产系统</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:#f5f6fa; color:#1a1a2e; }
+
+  /* 顶栏 */
+  .header { background:#fff; border-bottom:1px solid #e8eaef; padding:16px 24px; display:flex; align-items:center; gap:10px; }
+  .header .logo { font-size:22px; font-weight:700; color:#fb7299; }
+  .header .sub { color:#999; font-size:13px; }
+  .header .back-btn { color:#888; font-size:13px; cursor:pointer; text-decoration:none; margin-right:8px; }
+  .header .back-btn:hover { color:#333; }
+
+  /* 容器 */
+  .container { max-width:960px; margin:0 auto; padding:24px 16px; }
+
+  /* 输入区 */
+  .input-card { background:#fff; border-radius:12px; border:1px solid #e8eaef; padding:24px; margin-bottom:28px; }
+  .input-card h2 { font-size:16px; font-weight:600; margin-bottom:12px; }
+  .input-row { display:flex; gap:10px; }
+  .input-row input { flex:1; border:1px solid #ddd; border-radius:8px; padding:10px 14px; font-size:14px; outline:none; transition:border .2s,box-shadow .2s; }
+  .input-row input:focus { border-color:#fb7299; box-shadow:0 0 0 3px rgba(251,114,153,.12); }
+  .input-row input.error { border-color:#ef4444; }
+  .input-row button { background:#fb7299; color:#fff; border:none; border-radius:8px; padding:10px 22px; font-size:14px; font-weight:500; cursor:pointer; white-space:nowrap; transition:background .2s; }
+  .input-row button:hover { background:#f04c7f; }
+  .input-row button:disabled { background:#f5a5be; cursor:not-allowed; }
+  .error-msg { color:#ef4444; font-size:13px; margin-top:8px; }
+
+  /* 列表标题 */
+  .section-title { font-size:16px; font-weight:600; margin-bottom:14px; }
+  .section-title .count { color:#999; font-weight:400; font-size:13px; }
+
+  /* 空状态 */
+  .empty { text-align:center; color:#999; padding:60px 0; }
+  .empty .icon { font-size:40px; margin-bottom:10px; }
+
+  /* 卡片网格 */
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:16px; }
+  .card { background:#fff; border-radius:12px; border:1px solid #e8eaef; overflow:hidden; cursor:pointer; transition:transform .2s,box-shadow .2s; }
+  .card:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.07); }
+  .card .thumb { width:100%; aspect-ratio:16/9; background:#f0f0f0; object-fit:cover; display:block; }
+  .card .thumb-placeholder { width:100%; aspect-ratio:16/9; background:#f0f0f0; display:flex; align-items:center; justify-content:center; color:#ccc; font-size:28px; }
+  .card .info { padding:14px; }
+  .card .title { font-size:13px; font-weight:500; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:6px; }
+  .card .meta { font-size:12px; color:#999; margin-bottom:8px; }
+  .badge { display:inline-block; font-size:11px; padding:2px 8px; border-radius:10px; font-weight:500; }
+  .badge-ready { background:#dcfce7; color:#16a34a; }
+  .badge-pending,.badge-downloading,.badge-transcribing,.badge-extracting_frames,.badge-analyzing { background:#dbeafe; color:#2563eb; }
+  .badge-partial { background:#fef9c3; color:#a16207; }
+  .badge-failed { background:#fee2e2; color:#dc2626; }
+
+  /* ===== 详情页 ===== */
+  .detail-meta { background:#fff; border-radius:12px; border:1px solid #e8eaef; padding:20px; margin-bottom:20px; display:flex; gap:18px; }
+  .detail-meta img { width:180px; height:108px; object-fit:cover; border-radius:8px; flex-shrink:0; }
+  .detail-meta .right { flex:1; min-width:0; }
+  .detail-meta h1 { font-size:17px; font-weight:600; line-height:1.4; margin-bottom:6px; }
+  .detail-meta .author { font-size:13px; color:#888; margin-bottom:8px; }
+  .detail-meta .tags { display:flex; flex-wrap:wrap; gap:6px; }
+  .detail-meta .tag { font-size:11px; background:#f3f4f6; color:#666; padding:2px 8px; border-radius:10px; }
+  .detail-actions { display:flex; gap:8px; margin-top:10px; }
+  .detail-actions button { font-size:12px; padding:5px 14px; border-radius:6px; border:1px solid #ddd; background:#fff; cursor:pointer; transition:all .2s; }
+  .detail-actions button:hover { border-color:#fb7299; color:#fb7299; }
+  .detail-actions .btn-danger { color:#ef4444; border-color:#fecaca; }
+  .detail-actions .btn-danger:hover { background:#fef2f2; border-color:#ef4444; }
+  .processing-hint { font-size:12px; color:#2563eb; margin-top:8px; animation:pulse 1.5s ease-in-out infinite; }
+  .error-hint { font-size:12px; color:#ef4444; margin-top:8px; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+  /* Tab */
+  .tabs { display:flex; border-bottom:1px solid #e8eaef; background:#fff; border-radius:12px 12px 0 0; overflow:hidden; }
+  .tabs button { padding:12px 20px; font-size:13px; font-weight:500; border:none; background:none; cursor:pointer; color:#888; border-bottom:2px solid transparent; transition:all .2s; }
+  .tabs button:hover { color:#333; background:#fafafa; }
+  .tabs button.active { color:#fb7299; border-bottom-color:#fb7299; background:#fff1f5; }
+  .tab-content { background:#fff; border:1px solid #e8eaef; border-top:none; border-radius:0 0 12px 12px; padding:20px; min-height:240px; }
+
+  /* 转写 */
+  .transcript-list { max-height:500px; overflow-y:auto; }
+  .transcript-item { display:flex; gap:12px; padding:6px 0; border-bottom:1px solid #f5f5f5; }
+  .transcript-item:last-child { border-bottom:none; }
+  .transcript-time { font-size:12px; color:#999; width:110px; flex-shrink:0; padding-top:2px; font-family:monospace; }
+  .transcript-text { font-size:13px; color:#444; line-height:1.6; }
+  .transcript-text .ai-badge { font-size:10px; background:#f3e8ff; color:#7c3aed; padding:1px 6px; border-radius:4px; margin-left:6px; }
+
+  /* 关键帧 */
+  .kf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; }
+  .kf-item { cursor:pointer; }
+  .kf-item img { width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:8px; transition:opacity .2s; }
+  .kf-item img:hover { opacity:.85; }
+  .kf-item .kf-time { text-align:center; font-size:11px; color:#999; margin-top:4px; }
+  .lightbox { position:fixed; inset:0; background:rgba(0,0,0,.75); display:flex; align-items:center; justify-content:center; z-index:100; cursor:pointer; }
+  .lightbox img { max-width:90vw; max-height:90vh; border-radius:12px; }
+
+  /* 知识 */
+  .knowledge-section { border:1px solid #e8eaef; border-radius:8px; margin-bottom:10px; }
+  .knowledge-section summary { padding:12px 16px; font-weight:500; font-size:14px; cursor:pointer; user-select:none; }
+  .knowledge-section summary:hover { background:#fafafa; }
+  .knowledge-section .content { padding:0 16px 14px; }
+  .knowledge-section pre { font-size:12px; color:#555; white-space:pre-wrap; word-break:break-all; background:#f9fafb; border-radius:6px; padding:12px; overflow-x:auto; }
+
+  .empty-tab { text-align:center; color:#bbb; padding:50px 0; font-size:14px; }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+const API = "http://localhost:8000";
+const STATUS_LABEL = {
+  ready:"已就绪", pending:"待处理", downloading:"下载中",
+  transcribing:"转写中", extracting_frames:"截帧中",
+  analyzing:"分析中", partial:"部分完成", failed:"失败"
+};
+const PROCESSING = ["pending","downloading","transcribing","extracting_frames","analyzing"];
+
+// ─── 工具函数 ───
+function fmtDur(sec) {
+  const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
+  if(h>0) return `${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+  return `${m}:${String(s).padStart(2,"0")}`;
+}
+function fmtTime(sec) {
+  const m=Math.floor(sec/60), s=Math.floor(sec%60);
+  return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+}
+function badgeClass(status) { return "badge badge-" + status; }
+
+// ─── API ───
+async function apiCreateAsset(url) {
+  const res = await fetch(`${API}/api/assets`, {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({url})
+  });
+  const data = await res.json();
+  if(!res.ok) throw new Error(data.detail || "提交失败");
+  return data;
+}
+async function apiListAssets() {
+  const res = await fetch(`${API}/api/assets`);
+  if(!res.ok) throw new Error("获取列表失败");
+  return res.json();
+}
+async function apiGetAsset(id) {
+  const res = await fetch(`${API}/api/assets/${id}`);
+  if(!res.ok) throw new Error("获取资产失败");
+  return res.json();
+}
+async function apiDeleteAsset(id) {
+  const res = await fetch(`${API}/api/assets/${id}`, {method:"DELETE"});
+  if(!res.ok) throw new Error("删除失败");
+  return res.json();
+}
+async function apiReprocess(id) {
+  const res = await fetch(`${API}/api/assets/${id}/reprocess`, {method:"POST"});
+  if(!res.ok) throw new Error("重新处理失败");
+  return res.json();
+}
+
+// ─── 路由 ───
+let currentPage = "home";
+let currentId = null;
+
+function navigate(page, id) {
+  currentPage = page;
+  currentId = id || null;
+  render();
+}
+
+// ─── 首页 ───
+let assets = [];
+let urlValue = "";
+let urlError = "";
+let submitting = false;
+let listTimer = null;
+
+async function fetchList() {
+  try {
+    const data = await apiListAssets();
+    assets = data.assets || [];
+    if(currentPage === "home") renderHome();
+  } catch(e) {}
+}
+
+async function handleSubmit() {
+  const val = urlValue.trim();
+  if(!/BV[a-zA-Z0-9]{10}/.test(val)) {
+    urlError = "请输入包含 BV 号的 B 站视频链接";
+    renderHome(); return;
+  }
+  urlError = "";
+  submitting = true;
+  renderHome();
+  try {
+    await apiCreateAsset(val);
+    urlValue = "";
+    await fetchList();
+  } catch(e) {
+    urlError = e.message || "提交失败";
+  }
+  submitting = false;
+  renderHome();
+}
+
+function renderHome() {
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <div class="header">
+      <span class="logo">BiliDigest</span>
+      <span class="sub">B站视频知识资产系统</span>
+    </div>
+    <div class="container">
+      <div class="input-card">
+        <h2>提取视频知识</h2>
+        <div class="input-row">
+          <input id="urlInput" type="text" class="${urlError?'error':''}"
+            placeholder="粘贴 B 站视频链接 或 分享文本，例如 https://www.bilibili.com/video/BVxxxxxxxxxx"
+            value="${escHtml(urlValue)}" />
+          <button id="submitBtn" ${submitting?'disabled':''}>${submitting?'提交中...':'开始提取'}</button>
+        </div>
+        ${urlError ? `<div class="error-msg">${escHtml(urlError)}</div>` : ''}
+      </div>
+
+      <div class="section-title">
+        我的视频资产 ${assets.length > 0 ? `<span class="count">(${assets.length})</span>` : ''}
+      </div>
+
+      ${assets.length === 0 ? `
+        <div class="empty">
+          <div class="icon">📹</div>
+          <div>还没有视频资产，粘贴一个 B 站链接开始吧</div>
+        </div>
+      ` : `
+        <div class="grid">
+          ${assets.map(a => `
+            <div class="card" data-id="${a.id}">
+              ${a.thumbnail_url
+                ? `<img class="thumb" src="${escHtml(a.thumbnail_url)}" referrerpolicy="no-referrer" alt="">`
+                : `<div class="thumb-placeholder">▶</div>`}
+              <div class="info">
+                <div class="title">${escHtml(a.title || a.id)}</div>
+                <div class="meta">${escHtml(a.author)} · ${fmtDur(a.duration)}</div>
+                <span class="${badgeClass(a.status)}">${STATUS_LABEL[a.status] || a.status}</span>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `}
+    </div>
+  `;
+
+  // 绑定事件
+  const input = document.getElementById("urlInput");
+  input.addEventListener("input", e => { urlValue = e.target.value; urlError = ""; });
+  input.addEventListener("keydown", e => { if(e.key==="Enter") handleSubmit(); });
+  document.getElementById("submitBtn").addEventListener("click", handleSubmit);
+  document.querySelectorAll(".card[data-id]").forEach(el => {
+    el.addEventListener("click", () => navigate("detail", el.dataset.id));
+  });
+}
+
+// ─── 详情页 ───
+let detailAsset = null;
+let detailLoading = true;
+let detailTab = "转写文本";
+let detailTimer = null;
+let deleting = false;
+let enlarged = null;
+
+async function fetchDetail() {
+  try {
+    detailAsset = await apiGetAsset(currentId);
+    if(currentPage === "detail") renderDetail();
+  } catch(e) {
+    detailAsset = null;
+    if(currentPage === "detail") renderDetail();
+  }
+  detailLoading = false;
+}
+
+function startDetailPolling() {
+  stopDetailPolling();
+  detailTimer = setInterval(async () => {
+    if(!detailAsset || !PROCESSING.includes(detailAsset.status)) {
+      stopDetailPolling(); return;
+    }
+    await fetchDetail();
+  }, 3000);
+}
+function stopDetailPolling() {
+  if(detailTimer) { clearInterval(detailTimer); detailTimer = null; }
+}
+
+async function handleDelete() {
+  if(!confirm("确认删除该资产？")) return;
+  deleting = true;
+  renderDetail();
+  try {
+    await apiDeleteAsset(currentId);
+    navigate("home");
+    fetchList();
+  } catch(e) {
+    deleting = false;
+    renderDetail();
+  }
+}
+
+async function handleReprocess() {
+  try {
+    await apiReprocess(currentId);
+    detailLoading = true;
+    renderDetail();
+    await fetchDetail();
+    startDetailPolling();
+  } catch(e) {
+    alert(e.message);
+  }
+}
+
+const TABS = ["转写文本","关键帧","知识结构"];
+
+function renderDetail() {
+  const app = document.getElementById("app");
+  const a = detailAsset;
+
+  if(detailLoading) {
+    app.innerHTML = `<div class="header"><span class="logo">BiliDigest</span></div>
+      <div class="container"><div class="empty">加载中...</div></div>`;
+    return;
+  }
+  if(!a) {
+    app.innerHTML = `<div class="header"><span class="logo">BiliDigest</span></div>
+      <div class="container"><div class="empty"><div>资产不存在或已删除</div>
+      <div style="margin-top:12px"><a href="#" id="goHome" style="color:#fb7299">返回首页</a></div></div></div>`;
+    document.getElementById("goHome")?.addEventListener("click", e => { e.preventDefault(); navigate("home"); fetchList(); });
+    return;
+  }
+
+  let tabContent = "";
+  if(detailTab === "转写文本") tabContent = renderTranscripts(a);
+  else if(detailTab === "关键帧") tabContent = renderKeyframes(a);
+  else if(detailTab === "知识结构") tabContent = renderKnowledge(a);
+
+  app.innerHTML = `
+    <div class="header">
+      <a href="#" class="back-btn" id="goBack">← 返回</a>
+      <span class="logo">BiliDigest</span>
+    </div>
+    <div class="container">
+      <div class="detail-meta">
+        ${a.thumbnail_url ? `<img src="${escHtml(a.thumbnail_url)}" referrerpolicy="no-referrer" alt="">` : ''}
+        <div class="right">
+          <h1>${escHtml(a.title)}</h1>
+          <div class="author">${escHtml(a.author)} · ${fmtDur(a.duration)}</div>
+          <div class="tags">
+            <span class="${badgeClass(a.status)}">${STATUS_LABEL[a.status] || a.status}</span>
+            ${(a.tags||[]).map(t => `<span class="tag">${escHtml(t)}</span>`).join("")}
+          </div>
+          ${PROCESSING.includes(a.status) ? `<div class="processing-hint">正在处理中，每3秒自动刷新...</div>` : ''}
+          ${a.status==="failed" && a.error_message ? `<div class="error-hint">错误：${escHtml(a.error_message)}</div>` : ''}
+          <div class="detail-actions">
+            ${a.status==="ready"||a.status==="partial"||a.status==="failed" ? `<button id="reprocessBtn">重新处理</button>` : ''}
+            <button class="btn-danger" id="deleteBtn">${deleting?'删除中...':'删除'}</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        ${TABS.map(t => `<button class="tab-btn ${detailTab===t?'active':''}" data-tab="${t}">${t}</button>`).join("")}
+      </div>
+      <div class="tab-content">${tabContent}</div>
+    </div>
+    ${enlarged ? `<div class="lightbox" id="lightbox"><img src="${enlarged}"></div>` : ''}
+  `;
+
+  // 绑定事件
+  document.getElementById("goBack").addEventListener("click", e => { e.preventDefault(); stopDetailPolling(); navigate("home"); fetchList(); });
+  document.getElementById("deleteBtn")?.addEventListener("click", handleDelete);
+  document.getElementById("reprocessBtn")?.addEventListener("click", handleReprocess);
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => { detailTab = btn.dataset.tab; renderDetail(); });
+  });
+  document.querySelectorAll(".kf-item[data-url]").forEach(el => {
+    el.addEventListener("click", () => { enlarged = el.dataset.url; renderDetail(); });
+  });
+  document.getElementById("lightbox")?.addEventListener("click", () => { enlarged = null; renderDetail(); });
+}
+
+function renderTranscripts(a) {
+  if(PROCESSING.includes(a.status)) return `<div class="empty-tab">转写文本生成中...</div>`;
+  if(!a.transcripts?.length) return `<div class="empty-tab">暂无转写文本</div>`;
+  return `<div class="transcript-list">${a.transcripts.map(t => `
+    <div class="transcript-item">
+      <span class="transcript-time">[${fmtTime(t.start_time)}-${fmtTime(t.end_time)}]</span>
+      <span class="transcript-text">${escHtml(t.text)}${t.source==="whisper" ? '<span class="ai-badge">AI转写</span>' : ''}</span>
+    </div>
+  `).join("")}</div>`;
+}
+
+function renderKeyframes(a) {
+  if(PROCESSING.includes(a.status)) return `<div class="empty-tab">关键帧截取中...</div>`;
+  if(!a.keyframes?.length) return `<div class="empty-tab">暂无关键帧</div>`;
+  return `<div class="kf-grid">${a.keyframes.map(kf => `
+    <div class="kf-item" data-url="${API}${kf.url}">
+      <img src="${API}${escHtml(kf.url)}" alt="${fmtTime(kf.timestamp)}">
+      <div class="kf-time">${fmtTime(kf.timestamp)}</div>
+    </div>
+  `).join("")}</div>`;
+}
+
+function renderKnowledge(a) {
+  if(PROCESSING.includes(a.status)) return `<div class="empty-tab">知识结构提取中...</div>`;
+  const k = a.structured_knowledge;
+  if(!k || Object.keys(k).length===0) return `<div class="empty-tab">暂无知识结构</div>`;
+  const sections = [
+    {key:"arguments",label:"核心论点"},
+    {key:"timeline",label:"内容时间线"},
+    {key:"concepts",label:"关键概念"},
+    {key:"conclusions",label:"结论与建议"}
+  ];
+  return sections.filter(s => k[s.key]).map(s => `
+    <details class="knowledge-section" open>
+      <summary>${s.label}</summary>
+      <div class="content"><pre>${escHtml(JSON.stringify(k[s.key], null, 2))}</pre></div>
+    </details>
+  `).join("");
+}
+
+function escHtml(str) {
+  if(!str) return "";
+  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ─── 路由入口 ───
+function render() {
+  if(listTimer) { clearInterval(listTimer); listTimer = null; }
+  stopDetailPolling();
+
+  if(currentPage === "home") {
+    detailAsset = null;
+    detailLoading = true;
+    detailTab = "转写文本";
+    deleting = false;
+    enlarged = null;
+    fetchList();
+    listTimer = setInterval(fetchList, 5000);
+    renderHome();
+  } else if(currentPage === "detail") {
+    detailLoading = true;
+    deleting = false;
+    enlarged = null;
+    renderDetail();
+    fetchDetail().then(() => {
+      if(detailAsset && PROCESSING.includes(detailAsset.status)) startDetailPolling();
+    });
+  }
+}
+
+// 启动
+render();
+</script>
+</body>
+</html>

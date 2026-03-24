@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+.next/
+out/
+
+# Env (keep .env.example, exclude secrets)
+.env
+.env.local
+
+# Data (runtime)
+bilidigest/data/
+*.db
+
+# OS
+.DS_Store
+Thumbs.db
