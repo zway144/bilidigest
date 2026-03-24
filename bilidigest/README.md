@@ -31,29 +31,63 @@
 
 ## 快速启动
 
-**环境要求**：Python ≥ 3.10 | Node.js ≥ 18 | ffmpeg | yt-dlp
+### 环境要求
+
+- Python ≥ 3.10
+- Node.js ≥ 18
+- ffmpeg（音视频处理）
+- yt-dlp（B站视频下载）
+
+### 安装 ffmpeg 和 yt-dlp
+
+**Windows：**
+- ffmpeg：下载 https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip ，解压后将 bin 目录加入系统 PATH
+- yt-dlp：`pip install yt-dlp`
+
+**Mac：**
+```bash
+brew install ffmpeg yt-dlp
+```
+
+**Linux：**
+```bash
+sudo apt install ffmpeg && pip install yt-dlp
+```
+
+### 一键启动（推荐）
+
+```bash
+git clone https://github.com/zway144/bilidigest.git
+cd bilidigest
+```
+
+- **Windows**：双击 `start.bat`
+- **Mac/Linux**：`chmod +x start.sh && ./start.sh`
+
+### 手动启动
 
 ```bash
 # 1. 克隆项目
-git clone <repo-url> && cd bilidigest
+git clone https://github.com/zway144/bilidigest.git && cd bilidigest
 
-# 2. 后端
+# 2. 启动后端
 cd backend
 pip install -r requirements.txt
-pip install faster-whisper
-cp .env.example .env          # 编辑 .env 填入 LLM_API_KEY
-python -m uvicorn main:app --host 0.0.0.0 --port 8000
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
-# 3. 前端（新终端）
+# 3. 启动前端（新开一个终端）
 cd frontend
 npm install
-echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > .env.local
 npm run dev
 
 # 4. 打开浏览器访问 http://localhost:3000
 ```
 
-> **注意**：需要配置 `LLM_API_KEY`。默认使用 MiniMax API，也可切换为 DeepSeek、OpenAI 等任何 OpenAI 兼容接口（修改 `.env` 中的 `LLM_BASE_URL` 和 `LLM_MODEL`）。
+### 注意事项
+
+- LLM API Key 已内置（仓库私有），无需额外配置
+- 首次安装 Whisper 会自动下载 PyTorch（约 2-3GB），请耐心等待
+- 如遇端口占用，请关闭占用端口的程序或修改启动命令中的端口号
 
 ---
 

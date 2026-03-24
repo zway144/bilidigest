@@ -17,8 +17,6 @@ venv/
 data/
 
 # Environment
-.env
-backend/.env
 frontend/.env.local
 
 # IDE
