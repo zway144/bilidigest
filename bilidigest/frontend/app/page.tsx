@@ -70,13 +70,12 @@ export default function App() {
   return (
     <div className="h-full flex">
       {/* ── SIDEBAR ── */}
-      <aside className="w-[214px] flex-shrink-0 flex flex-col" style={{ background: "var(--sidebar-bg)", borderRight: "1px solid var(--border2)" }}>
+      <aside className="w-[214px] flex-shrink-0 flex flex-col" style={{ background: "var(--sidebar-bg)", borderRight: "1px solid var(--border)" }}>
         {/* Logo */}
-        <div className="px-5 pt-6 pb-5" style={{ borderBottom: "1px solid var(--border)" }}>
-          <h1 className="font-display text-[20px] font-bold tracking-tight" style={{ fontFamily: "'Fraunces', Georgia, serif", color: "var(--text-primary)" }}>
-            Bili<i style={{ color: "var(--accent)", fontStyle: "italic" }}>Digest</i>
+        <div className="px-5 pt-6 pb-5" style={{ borderBottom: "1px solid rgba(200,185,168,.15)" }}>
+          <h1 className="logo-text" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 24, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)", cursor: "default" }}>
+            Bili<i style={{ color: "var(--accent)", fontStyle: "italic", fontWeight: 600 }}>Digest</i>
           </h1>
-          <div style={{ width: 22, height: 3, background: "var(--accent)", borderRadius: 2, marginTop: 8, opacity: 0.55 }} />
         </div>
 
         {/* Nav */}
@@ -93,9 +92,9 @@ export default function App() {
             badge={assets.length || undefined}
           />
 
-          <div className="pt-4 pb-1 px-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: "var(--text-faint)" }}>
-              资产产出
+          <div className="pt-5 pb-1 px-3">
+            <p className="text-[9px] font-medium uppercase tracking-[0.5em]" style={{ color: "var(--text-muted)" }}>
+              产出
             </p>
           </div>
           <NavItem
@@ -116,8 +115,8 @@ export default function App() {
         </nav>
 
         {/* Footer */}
-        <div className="px-5 py-4" style={{ borderTop: "1px solid var(--border)" }}>
-          <p className="text-[11px] font-medium tracking-[0.04em]" style={{ color: "var(--text-faint)" }}>BiliDigest · v0.3</p>
+        <div className="px-5 py-4" style={{ borderTop: "1px solid rgba(200,185,168,.15)" }}>
+          <p className="text-[10px] tracking-[0.08em]" style={{ color: "var(--text-muted)" }}>BiliDigest · v0.3</p>
         </div>
       </aside>
 
@@ -157,23 +156,23 @@ function NavItem({ icon, label, active, onClick, badge }: {
   return (
     <button
       onClick={onClick}
-      className={`nav-item w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] transition-all ${active ? "active" : ""}`}
+      className={`nav-item w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] text-[13px] transition-all ${active ? "active" : ""}`}
       style={{
         color: active ? "var(--sidebar-text-active)" : "var(--sidebar-text)",
         background: active ? "var(--sidebar-active)" : undefined,
-        fontWeight: active ? 700 : 500,
+        fontWeight: active ? 500 : 400,
       }}
-      onMouseEnter={e => { if (!active) e.currentTarget.style.background = "var(--sidebar-hover)"; }}
-      onMouseLeave={e => { if (!active) e.currentTarget.style.background = ""; }}
+      onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "var(--sidebar-hover)"; e.currentTarget.style.color = "var(--text-secondary)"; } }}
+      onMouseLeave={e => { if (!active) { e.currentTarget.style.background = ""; e.currentTarget.style.color = "var(--sidebar-text)"; } }}
     >
-      <span className="w-[15px] h-[15px] flex items-center justify-center flex-shrink-0"
-        style={{ opacity: active ? 1 : 0.35, color: active ? "var(--accent)" : undefined }}>
+      <span className="w-[16px] h-[16px] flex items-center justify-center flex-shrink-0"
+        style={{ opacity: active ? 0.8 : 0.3, color: active ? "var(--accent)" : undefined }}>
         {icon}
       </span>
       <span className="flex-1 text-left truncate">{label}</span>
       {badge !== undefined && (
-        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
-          style={{ background: "var(--accent-light)", color: "var(--accent)" }}>{badge}</span>
+        <span className="text-[10px] px-1.5 py-0.5 rounded-[2px] font-medium"
+          style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>{badge}</span>
       )}
     </button>
   );
@@ -198,12 +197,13 @@ function IconTree() {
 
 
 /* ═══════════════════════════════════════════════════════
-   PAGE: 新总结
+   PAGE: 新总结 — Claude-inspired editorial design
    ═══════════════════════════════════════════════════════ */
 function NewSummaryPage({ onCreated }: { onCreated: (id: string) => void }) {
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [focused, setFocused] = useState(false);
 
   const submit = async () => {
     if (!/BV[a-zA-Z0-9]{10}/.test(url)) { setError("请输入包含 BV 号的 B 站视频链接"); return; }
@@ -216,64 +216,84 @@ function NewSummaryPage({ onCreated }: { onCreated: (id: string) => void }) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-8 py-16">
-      <div className="mb-10">
-        <h2 className="text-[28px] font-bold tracking-tight" style={{ fontFamily: "'Fraunces', Georgia, serif", color: "var(--text-primary)" }}>
-          新总结
+    <div className="flex flex-col items-center justify-center px-10" style={{ minHeight: "100vh" }}>
+
+      {/* ── Greeting / Slogan ── */}
+      <div className="text-center mb-14 ns-enter" style={{ animationDelay: "0.1s" }}>
+        <div className="inline-block text-[10px] font-medium uppercase tracking-[0.5em] mb-6 relative"
+          style={{ color: "var(--text-muted)" }}>
+          <span className="absolute top-1/2 right-[calc(100%+14px)] w-8 h-px" style={{ background: "var(--border)" }} />
+          <span className="absolute top-1/2 left-[calc(100%+14px)] w-8 h-px" style={{ background: "var(--border)" }} />
+          视频知识提取
+        </div>
+
+        <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: "clamp(2.8rem, 5.5vw, 4.2rem)", fontWeight: 300, letterSpacing: "-0.02em", lineHeight: 1.08, color: "var(--text-primary)" }}>
+          看见视频背后的<em style={{ fontStyle: "italic", color: "var(--accent)", fontWeight: 400 }}>知识</em>
         </h2>
-        <p className="text-sm mt-2 font-normal" style={{ color: "var(--text-muted)" }}>
-          粘贴 B 站视频链接，自动提取转写文本、关键帧和结构化知识
+        <p className="text-[15px] mt-4 max-w-[26rem] mx-auto leading-[1.7]"
+          style={{ color: "var(--text-muted)", fontWeight: 300, letterSpacing: "0.02em" }}>
+          粘贴一个 B 站链接，将视频沉淀为可复用的结构化知识
         </p>
       </div>
 
-      <div className="rounded-2xl p-7" style={{ background: "var(--card)", border: "1.5px solid var(--border2)", boxShadow: "0 1px 4px rgba(60,50,30,.06)" }}>
-        <textarea
-          className="w-full border rounded-xl px-4 py-3.5 text-sm outline-none resize-none h-28 input-glow transition-all"
-          style={{ borderColor: "var(--border)" }}
-          placeholder="粘贴 B 站视频链接，例如 https://www.bilibili.com/video/BVxxxxxxxxxx&#10;&#10;也可以直接粘贴 B 站分享文本"
-          value={url}
-          onChange={e => { setUrl(e.target.value); setError(""); }}
-          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }}
-        />
-        {error && (
-          <p className="mt-3 text-sm text-[var(--red)] flex items-center gap-1.5">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 10.5a.75.75 0 110-1.5.75.75 0 010 1.5zM8.75 4.5v4a.75.75 0 01-1.5 0v-4a.75.75 0 011.5 0z"/></svg>
-            {error}
-          </p>
-        )}
-        <button
-          onClick={submit}
-          disabled={submitting}
-          className="mt-5 w-full py-3 rounded-xl text-white text-sm font-medium transition-all"
+      {/* ── Chatbox input ── */}
+      <div className="w-full max-w-[640px] ns-enter" style={{ animationDelay: "0.24s" }}>
+        <div
+          className="relative rounded-[16px] transition-all duration-200"
           style={{
-            background: submitting ? "var(--text-muted)" : "var(--accent)",
-            cursor: submitting ? "not-allowed" : "pointer",
+            background: "var(--card)",
+            border: focused ? "1px solid var(--border3)" : "1px solid var(--border)",
+            boxShadow: focused ? "0 2px 24px rgba(26,22,18,.045)" : "0 1px 8px rgba(26,22,18,.03)",
           }}
-          onMouseOver={e => !submitting && ((e.target as HTMLElement).style.background = "var(--accent-hover)")}
-          onMouseOut={e => !submitting && ((e.target as HTMLElement).style.background = "var(--accent)")}
         >
-          {submitting ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2, borderTopColor: "#fff" }} />
-              提交中...
-            </span>
-          ) : "开始提取"}
-        </button>
-      </div>
+          <input
+            type="text"
+            className="w-full bg-transparent px-6 pt-[22px] pb-[58px] text-[16px] outline-none"
+            style={{ color: "var(--text-primary)", fontWeight: 300, letterSpacing: "0.01em" }}
+            placeholder="粘贴 B 站视频链接，按回车开始提取..."
+            value={url}
+            onChange={e => { setUrl(e.target.value); setError(""); }}
+            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); submit(); } }}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+          />
 
-      {/* Tips */}
-      <div className="mt-8 grid grid-cols-3 gap-4">
-        {[
-          { icon: "🎯", title: "转写文本", desc: "自动获取字幕或 AI 转写" },
-          { icon: "📸", title: "关键帧", desc: "智能提取视频中的关键画面" },
-          { icon: "🧠", title: "知识结构", desc: "LLM 提取论点、概念、时间线" },
-        ].map(t => (
-          <div key={t.title} className="bg-white/60 backdrop-blur rounded-xl p-4 border" style={{ borderColor: "var(--border)" }}>
-            <span className="text-2xl">{t.icon}</span>
-            <p className="text-sm font-medium mt-2" style={{ color: "var(--text-primary)" }}>{t.title}</p>
-            <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>{t.desc}</p>
+          {/* Bottom bar */}
+          <div className="absolute bottom-3 left-3.5 right-3.5 flex items-center justify-between">
+            <div className="flex items-center gap-2 pl-2 min-h-[40px]">
+              {error && (
+                <p className="text-[12.5px] flex items-center gap-1.5 fade-in" style={{ color: "var(--red)" }}>
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 10.5a.75.75 0 110-1.5.75.75 0 010 1.5zM8.75 4.5v4a.75.75 0 01-1.5 0v-4a.75.75 0 011.5 0z"/></svg>
+                  {error}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={submit}
+              disabled={submitting || !url.trim()}
+              className="w-10 h-10 flex items-center justify-center rounded-[12px] transition-all duration-150"
+              style={{
+                background: (submitting || !url.trim()) ? "var(--bg2)" : "var(--text-primary)",
+                color: (submitting || !url.trim()) ? "var(--text-faint)" : "var(--bg)",
+                cursor: (submitting || !url.trim()) ? "default" : "pointer",
+              }}
+              onMouseOver={e => { if (!submitting && url.trim()) e.currentTarget.style.background = "var(--text-secondary)"; }}
+              onMouseOut={e => { if (!submitting && url.trim()) e.currentTarget.style.background = "var(--text-primary)"; }}
+            >
+              {submitting ? (
+                <span className="spinner" style={{ width: 16, height: 16, borderWidth: 1.5, borderColor: "rgba(255,255,255,.3)", borderTopColor: "currentColor" }} />
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+                </svg>
+              )}
+            </button>
           </div>
-        ))}
+        </div>
+
+        <p className="text-center text-[12px] mt-3 tracking-[0.03em]" style={{ color: "var(--text-faint)", fontWeight: 300 }}>
+          支持视频链接、分享短链、或含 BV 号的分享文本
+        </p>
       </div>
     </div>
   );
@@ -322,8 +342,8 @@ function LibraryPage({ assets, onSelect, onRefresh }: { assets: any[]; onSelect:
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-[26px] font-bold tracking-tight" style={{ fontFamily: "'Fraunces', Georgia, serif", color: "var(--text-primary)" }}>资产库</h2>
-          <p className="text-[12.5px] mt-1 font-medium" style={{ color: "var(--text-faint)" }}>共 {filtered.length} 个视频资产</p>
+          <h2 className="tracking-[-0.02em]" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 32, fontWeight: 400, color: "var(--text-primary)" }}>资产库</h2>
+          <p className="text-[12px] mt-1.5 tracking-[0.04em]" style={{ color: "var(--text-muted)", fontWeight: 300 }}>共 {filtered.length} 个视频资产</p>
         </div>
       </div>
 
@@ -692,13 +712,13 @@ function DetailPage({ asset, onBack, onDelete, onRefresh }: {
                 { key: "summary", label: "全文总结" },
                 { key: "xiaohongshu", label: "小红书图文" },
                 { key: "mindmap", label: "知识树" },
-                { key: "chat", label: "💬 AI对话" },
+                { key: "chat", label: "AI 对话" },
               ] as const).map(t => (
                 <button
                   key={t.key}
                   onClick={() => setTab(t.key)}
-                  className={`tab-btn px-5 py-3 text-sm font-medium transition-colors ${tab === t.key ? "active" : ""}`}
-                  style={{ color: tab === t.key ? "var(--accent)" : "var(--text-secondary)" }}
+                  className={`tab-btn px-5 py-2.5 text-[13px] transition-colors ${tab === t.key ? "active" : ""}`}
+                  style={{ color: tab === t.key ? "var(--accent)" : "var(--text-muted)", fontWeight: tab === t.key ? 500 : 400 }}
                 >
                   {t.label}
                 </button>
@@ -910,9 +930,9 @@ function SummaryView({ data, onTimeClick }: { data: any; onTimeClick?: (t: strin
   return (
     <div className="space-y-4">
       {/* 摘要 - 始终可见 */}
-      <div className="bg-white rounded-2xl border-l-4 shadow-sm p-6" style={{ borderLeftColor: "var(--blue)", borderTop: "1px solid var(--border)", borderRight: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}>
-        <h2 className="text-lg font-bold mb-2 tracking-tight" style={{ color: "var(--text-primary)" }}>{data.title}</h2>
-        <p className="text-[15px] leading-[1.8]" style={{ color: "var(--text-secondary)" }}>{data.abstract}</p>
+      <div className="rounded-[8px] p-6" style={{ borderLeft: "3px solid var(--accent)", background: "var(--card)", border: "1px solid var(--border)", borderLeftWidth: 3, borderLeftColor: "var(--accent)" }}>
+        <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, fontWeight: 400, color: "var(--text-primary)", marginBottom: 10 }}>{data.title}</h2>
+        <p className="text-[14px] leading-[1.8]" style={{ color: "var(--text-muted)", fontWeight: 300 }}>{data.abstract}</p>
       </div>
 
       {/* 全部展开/折叠 */}
@@ -1145,7 +1165,7 @@ function HistoryPage({ mode, assets }: { mode?: string; assets?: any[] }) {
   return (
     <div className="max-w-5xl mx-auto px-8 py-10">
       <div className="mb-6">
-        <h2 className="text-[26px] font-bold tracking-tight" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>{modeLabel}</h2>
+        <h2 className="tracking-[-0.02em]" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 32, fontWeight: 400, color: "var(--text-primary)" }}>{modeLabel}</h2>
         <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>选择视频资产生成内容，或查看历史记录</p>
       </div>
 

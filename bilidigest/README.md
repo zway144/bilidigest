@@ -188,7 +188,7 @@ bilidigest/
 
 ---
 
-## 开发迭代记录（共 11 次有效迭代）
+## 开发迭代记录（共 13 次有效迭代）
 
 | 迭代 | 内容 | 反馈 → 改动 |
 |------|------|-------------|
@@ -203,5 +203,7 @@ bilidigest/
 | 9 | Bug 修复：URL 解析丢 `?` 导致 yt-dlp 404、资产库摘要来源从 generation_history 读取 | B站分享链接格式修复、旧进程未正确终止 → 强制 kill 重启 |
 | 10 | Whisper → faster-whisper 提速、LLM chunk 扩大到 8000+ tokens | 转写速度 2-4x 提升，总流水线从 3.5min → 2.2min |
 | 11 | UI 全面重设计：Fraunces + Plus Jakarta Sans 字体、橙色强调色、奶白侧边栏、暖色调背景 | 深色侧栏 → 奶白；蓝色 → 橙色；冷色调 → 暖米白 |
+| 12 | 资产库摘要修复 | 右栏摘要来源从description改为generation_history的总结内容 |
+| 13 | UI全面重设计（Claude风格） | Cormorant Garamond + DM Sans 字体体系、暖纸张色背景、衬线加粗Logo带hover动效、新总结页居中聊天框布局 |
 
 > 每次迭代的定义：完成一个功能闭环并通过验收，或发现问题并修复验证。

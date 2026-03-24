@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  /* ── 背景层 ── */
-  --bg:    #F6F3ED;
-  --bg1:   #EFEBE3;
-  --bg2:   #E8E3D9;
+  /* ── 背景层 (warm paper tones) ── */
+  --bg:    #FEFCF9;
+  --bg1:   #F7F3ED;
+  --bg2:   #EDE8DF;
   --card:  #FFFFFF;
 
   /* ── 文字 ── */
-  --text-primary:   #1A1916;
-  --text-secondary: #635A4A;
-  --text-muted:     #A0957E;
-  --text-faint:     #C8BCA8;
+  --text-primary:   #1A1612;
+  --text-secondary: #3D362E;
+  --text-muted:     #6B6158;
+  --text-faint:     #C4B9A8;
 
   /* ── 强调色 — 橙色 ── */
   --accent:       #D4722D;
@@ -19,18 +19,19 @@
   --accent-light: rgba(212,114,45,.10);
   --accent-mid:   rgba(212,114,45,.22);
   --accent-glow:  rgba(212,114,45,.18);
+  --accent-soft:  rgba(212,114,45,.06);
 
-  /* ── 边框 ── */
-  --border:  rgba(60,50,30,.08);
-  --border2: rgba(60,50,30,.15);
-  --border3: rgba(60,50,30,.24);
+  /* ── 边框 (warm sand) ── */
+  --border:  #E8E0D4;
+  --border2: rgba(200,185,168,.4);
+  --border3: rgba(200,185,168,.6);
 
-  /* ── 侧边栏（奶白色） ── */
-  --sidebar-bg:          #FFFFFF;
-  --sidebar-hover:       #F2EFE8;
-  --sidebar-active:      rgba(212,114,45,.10);
-  --sidebar-text:        #A0957E;
-  --sidebar-text-active: #1A1916;
+  /* ── 侧边栏 ── */
+  --sidebar-bg:          #F3EFE8;
+  --sidebar-hover:       rgba(0,0,0,.04);
+  --sidebar-active:      rgba(212,114,45,.06);
+  --sidebar-text:        #6B6158;
+  --sidebar-text-active: #1A1612;
 
   /* ── 功能色 ── */
   --green: #5E8B65;
@@ -47,8 +48,8 @@
 @theme inline {
   --color-background: var(--bg);
   --color-foreground: var(--text-primary);
-  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-display: 'Fraunces', Georgia, serif;
+  --font-sans: 'DM Sans', 'Noto Sans SC', system-ui, sans-serif;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
 }
 
 * { scrollbar-width: thin; scrollbar-color: #D9D4CB transparent; }
@@ -56,9 +57,10 @@
 body {
   background: var(--bg);
   color: var(--text-primary);
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  font-size: 15px;
-  line-height: 1.75;
+  font-family: 'DM Sans', 'Noto Sans SC', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -74,7 +76,7 @@ body {
 }
 .card-hover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(60,50,30,.08), 0 2px 6px rgba(60,50,30,.04);
+  box-shadow: 0 8px 24px rgba(26,22,18,.06), 0 2px 6px rgba(26,22,18,.03);
 }
 
 /* ── 骨架屏 ── */
@@ -99,10 +101,10 @@ body {
 
 /* ── 渐入动画 ── */
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.animate-in { animation: fadeInUp 0.35s cubic-bezier(0.22,1,0.36,1); }
+.animate-in { animation: fadeInUp 0.55s ease both; }
 
 @keyframes fadeIn {
   from { opacity: 0; }
@@ -110,26 +112,54 @@ body {
 }
 .fade-in { animation: fadeIn 0.3s ease-out; }
 
-/* ── 侧边栏项目（奶白侧边栏样式） ── */
+/* ── ns-enter (staggered entrance) ── */
+@keyframes nsEnter {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ns-enter { animation: nsEnter 0.55s ease both; }
+
+/* ── 侧边栏项目 ── */
 .nav-item {
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.15s, color 0.15s;
   position: relative;
-  border-left: 2.5px solid transparent;
+  border-left: 2px solid transparent;
 }
 .nav-item.active {
   border-left-color: var(--accent);
 }
 
+/* ── Logo hover ── */
+.logo-text {
+  display: inline-block;
+  position: relative;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.logo-text::after {
+  content: '';
+  position: absolute;
+  bottom: -4px; left: 0;
+  width: 0; height: 1.5px;
+  background: var(--accent);
+  transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.logo-text:hover { transform: translateX(2px); }
+.logo-text:hover::after { width: 100%; }
+.logo-text i {
+  transition: letter-spacing 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.logo-text:hover i { letter-spacing: 0.04em; }
+
 /* ── Tab 按钮 ── */
 .tab-btn {
   position: relative;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color 0.15s;
 }
 .tab-btn::after {
   content: '';
   position: absolute;
   bottom: -1px; left: 0; right: 0;
-  height: 2.5px;
+  height: 2px;
   background: var(--accent);
   transform: scaleX(0);
   transition: transform 0.22s cubic-bezier(0.22,1,0.36,1);
@@ -138,14 +168,15 @@ body {
 
 /* ── 时间戳标签 ── */
 .time-tag {
-  font-size: 11.5px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 500;
   color: var(--accent);
-  background: var(--accent-light);
-  padding: 2px 7px;
-  border-radius: 4px;
+  background: var(--accent-soft);
+  padding: 2px 8px;
+  border-radius: 3px;
   cursor: pointer;
   transition: background 0.12s;
+  letter-spacing: 0.02em;
 }
 .time-tag:hover { background: var(--accent-mid); }
 
@@ -173,13 +204,13 @@ body {
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinner {
   width: 24px; height: 24px;
-  border: 2.5px solid var(--border2);
+  border: 2px solid var(--border2);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
 
-/* ── 标题字体（Fraunces） ── */
+/* ── 标题字体 ── */
 .font-display {
-  font-family: 'Fraunces', Georgia, serif;
+  font-family: 'Cormorant Garamond', Georgia, serif;
 }
