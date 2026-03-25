@@ -6,7 +6,11 @@ import json
 from llm_client import llm_client
 
 
-def _fmt_time(sec: float) -> str:
+def _fmt_time(sec) -> str:
+    """格式化时间，兼容数字(秒)和字符串('MM:SS')两种输入"""
+    if isinstance(sec, str):
+        return sec  # 已经是 "00:35" 格式，直接返回
+    sec = float(sec)
     m, s = int(sec // 60), int(sec % 60)
     return f"{m:02d}:{s:02d}"
 
@@ -23,21 +27,30 @@ def _build_context(asset: dict) -> str:
     if knowledge.get("timeline"):
         parts.append("\n## 内容时间线")
         for item in knowledge["timeline"]:
-            parts.append(f"- [{_fmt_time(item.get('start_time',0))}-{_fmt_time(item.get('end_time',0))}] {item.get('title','')}: {item.get('summary','')}")
+            title = item.get('title') or item.get('description') or item.get('summary') or ''
+            parts.append(f"- [{_fmt_time(item.get('start_time',0))}-{_fmt_time(item.get('end_time',0))}] {title}")
 
     if knowledge.get("arguments"):
         parts.append("\n## 核心论点")
         for item in knowledge["arguments"]:
-            parts.append(f"- [{item.get('time_ref','')}] {item.get('text','')} (置信度:{item.get('confidence','')})")
+            if isinstance(item, str):
+                parts.append(f"- {item}")
+            elif isinstance(item, dict):
+                parts.append(f"- [{item.get('time_ref','')}] {item.get('text','')} (置信度:{item.get('confidence','')})")
 
     if knowledge.get("concepts"):
         parts.append("\n## 关键概念")
         for item in knowledge["concepts"]:
-            parts.append(f"- {item.get('name','')}: {item.get('definition','')}")
+            if isinstance(item, str):
+                parts.append(f"- {item}")
+            elif isinstance(item, dict):
+                parts.append(f"- {item.get('name','')}: {item.get('definition','')}")
 
     if knowledge.get("conclusions"):
         conc = knowledge["conclusions"]
-        if conc.get("summary"):
+        if isinstance(conc, str):
+            parts.append(f"\n## 结论\n{conc}")
+        elif isinstance(conc, dict) and conc.get("summary"):
             parts.append(f"\n## 结论\n{conc['summary']}")
 
     # 转写文本（截断）

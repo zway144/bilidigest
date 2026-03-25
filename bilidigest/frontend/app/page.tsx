@@ -35,13 +35,20 @@ export default function App() {
   const [connError, setConnError] = useState("");
   const [historyMode, setHistoryMode] = useState<string | undefined>(undefined);
 
+  // 连续失败计数，避免单次超时就显示错误横幅
+  const failCountRef = useRef(0);
+
   const refreshList = useCallback(async () => {
     try {
       const d = await listAssets();
       setAssets(d.assets || []);
       setConnError("");
+      failCountRef.current = 0;
     } catch (e: any) {
-      setConnError(e.message || "无法连接后端");
+      if (e.message === "请求已取消") return;
+      failCountRef.current += 1;
+      // 连续失败 2 次以上才显示错误，避免后端繁忙时的单次超时误报
+      if (failCountRef.current >= 2) setConnError(e.message || "无法连接后端");
     }
   }, []);
 
@@ -51,20 +58,28 @@ export default function App() {
     return () => clearInterval(t);
   }, [refreshList]);
 
+  // goDetail 用 AbortController 防止快速切换时旧请求覆盖新数据
+  const detailAbortRef = useRef<AbortController | null>(null);
+
   const goDetail = useCallback(async (id: string) => {
+    detailAbortRef.current?.abort();
+    const controller = new AbortController();
+    detailAbortRef.current = controller;
     setSelectedId(id);
+    setSelectedAsset(null); // 清除旧数据，防止闪现上一个视频内容
     setPage("detail");
-    try { setSelectedAsset(await getAsset(id)); } catch {}
+    try { setSelectedAsset(await getAsset(id, controller.signal)); } catch {}
   }, []);
 
   // Poll detail while processing
   useEffect(() => {
     if (page !== "detail" || !selectedId || !selectedAsset) return;
     if (!PROCESSING.includes(selectedAsset.status)) return;
+    const controller = new AbortController();
     const t = setInterval(async () => {
-      try { setSelectedAsset(await getAsset(selectedId)); } catch {}
+      try { setSelectedAsset(await getAsset(selectedId, controller.signal)); } catch {}
     }, 3000);
-    return () => clearInterval(t);
+    return () => { clearInterval(t); controller.abort(); };
   }, [page, selectedId, selectedAsset?.status]);
 
   return (
@@ -132,10 +147,16 @@ export default function App() {
         )}
 
         <div className="animate-in">
-          {page === "new" && <NewSummaryPage onCreated={(id) => { refreshList(); goDetail(id); }} />}
+          {page === "new" && <NewSummaryPage assets={assets} onCreated={(id) => { refreshList(); goDetail(id); }} onGoDetail={goDetail} />}
           {page === "library" && <LibraryPage assets={assets} onSelect={goDetail} onRefresh={refreshList} />}
+          {page === "detail" && !selectedAsset && (
+            <div className="flex items-center justify-center" style={{ minHeight: "60vh" }}>
+              <span className="spinner" style={{ width: 24, height: 24, borderWidth: 2, borderColor: "var(--border)", borderTopColor: "var(--accent)" }} />
+            </div>
+          )}
           {page === "detail" && selectedAsset && (
             <DetailPage
+              key={selectedAsset.id}
               asset={selectedAsset}
               onBack={() => setPage("library")}
               onDelete={() => { setSelectedId(null); setSelectedAsset(null); setPage("library"); refreshList(); }}
@@ -199,11 +220,15 @@ function IconTree() {
 /* ═══════════════════════════════════════════════════════
    PAGE: 新总结 — Claude-inspired editorial design
    ═══════════════════════════════════════════════════════ */
-function NewSummaryPage({ onCreated }: { onCreated: (id: string) => void }) {
+function NewSummaryPage({ assets, onCreated, onGoDetail }: {
+  assets: any[]; onCreated: (id: string) => void; onGoDetail: (id: string) => void;
+}) {
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [focused, setFocused] = useState(false);
+
+  const processingAssets = assets.filter(a => PROCESSING.includes(a.status));
 
   const submit = async () => {
     if (!/BV[a-zA-Z0-9]{10}/.test(url)) { setError("请输入包含 BV 号的 B 站视频链接"); return; }
@@ -294,6 +319,29 @@ function NewSummaryPage({ onCreated }: { onCreated: (id: string) => void }) {
         <p className="text-center text-[12px] mt-3 tracking-[0.03em]" style={{ color: "var(--text-faint)", fontWeight: 300 }}>
           支持视频链接、分享短链、或含 BV 号的分享文本
         </p>
+
+        {/* ── Processing assets indicator ── */}
+        {processingAssets.length > 0 && (
+          <div className="mt-8 space-y-2">
+            {processingAssets.map(a => (
+              <button key={a.id} onClick={() => onGoDetail(a.id)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all"
+                style={{ background: "var(--card)", border: "1px solid var(--border)" }}
+                onMouseOver={e => (e.currentTarget.style.borderColor = "var(--accent)")}
+                onMouseOut={e => (e.currentTarget.style.borderColor = "var(--border)")}
+              >
+                <span className="spinner flex-shrink-0" style={{ width: 14, height: 14, borderWidth: 1.5, borderColor: "var(--border)", borderTopColor: "var(--accent)" }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] truncate" style={{ color: "var(--text-primary)" }}>{a.title || a.id}</p>
+                  <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>{STATUS_LABEL[a.status] || a.status}</p>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text-faint)", flexShrink: 0 }}>
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -562,7 +610,6 @@ function DetailPage({ asset, onBack, onDelete, onRefresh }: {
   const [genData, setGenData] = useState<Record<string, any>>({});
   const [genLoading, setGenLoading] = useState<Record<string, boolean>>({});
   const [genError, setGenError] = useState<Record<string, string>>({});
-  const [cacheChecked, setCacheChecked] = useState<Record<string, boolean>>({});
   const [userPrompt, setUserPrompt] = useState("");
 
   // AI Chat - 多轮对话
@@ -570,35 +617,34 @@ function DetailPage({ asset, onBack, onDelete, onRefresh }: {
   const [question, setQuestion] = useState("");
   const [asking, setAsking] = useState(false);
 
-  // 页面离开时取消所有进行中的请求
-  const abortRef = useRef<AbortController | null>(null);
+  // 长时操作（生成/查询）专用 abort：新操作会取消旧操作，组件卸载时清理
+  const opAbortRef = useRef<AbortController | null>(null);
   useEffect(() => {
-    return () => { abortRef.current?.abort(); };
+    return () => { opAbortRef.current?.abort(); };
   }, []);
 
-  // 切换 Tab 时自动加载缓存
+  // 切换 Tab 时自动加载缓存（用 cancelled flag 兼容 React strict mode 双重 effect）
   useEffect(() => {
-    if (tab === "chat" || cacheChecked[tab] || genData[tab] || genLoading[tab]) return;
-    setCacheChecked(p => ({ ...p, [tab]: true }));
+    if (tab === "chat") return;
+
+    let cancelled = false;
     setGenLoading(p => ({ ...p, [tab]: true }));
+
     getCachedGeneration(asset.id, tab).then(cached => {
-      if (cached) {
-        setGenData(p => ({ ...p, [tab]: cached }));
-        setGenLoading(p => ({ ...p, [tab]: false }));
-      } else {
-        setGenLoading(p => ({ ...p, [tab]: false }));
-        // 无缓存，不自动生成，让用户点击按钮
-      }
-    }).catch(() => {
-      setGenLoading(p => ({ ...p, [tab]: false }));
+      if (cancelled) return;
+      if (cached) setGenData(p => ({ ...p, [tab]: cached }));
+    }).catch(() => {}).finally(() => {
+      if (!cancelled) setGenLoading(p => ({ ...p, [tab]: false }));
     });
+
+    return () => { cancelled = true; };
   }, [tab, asset.id]);
 
   const handleGenerate = async (mode: string, force = false, prompt?: string) => {
     if (!force && genData[mode]) return;
-    abortRef.current?.abort();
+    opAbortRef.current?.abort();
     const controller = new AbortController();
-    abortRef.current = controller;
+    opAbortRef.current = controller;
     setGenLoading(p => ({ ...p, [mode]: true }));
     setGenError(p => ({ ...p, [mode]: "" }));
     try {
@@ -618,8 +664,11 @@ function DetailPage({ asset, onBack, onDelete, onRefresh }: {
     setChatHistory(prev => [...prev, { role: "user", content: q }]);
     setQuestion("");
     setAsking(true);
+    opAbortRef.current?.abort();
+    const controller = new AbortController();
+    opAbortRef.current = controller;
     try {
-      const d = await queryAsset([asset.id], q, abortRef.current?.signal);
+      const d = await queryAsset([asset.id], q, controller.signal);
       setChatHistory(prev => [...prev, { role: "assistant", content: d.answer, refs: d.references }]);
     } catch (e: any) {
       if (e.message === "请求已取消") return;
@@ -886,9 +935,9 @@ function TabContent({ mode, data, loading, error, onGenerate, asset, onTimeClick
       <div className="text-center py-20">
         <div className="spinner mx-auto mb-4" style={{ width: 32, height: 32 }} />
         <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-          正在生成{mode === "summary" ? "全文总结" : mode === "xiaohongshu" ? "小红书图文" : "知识树"}...
+          {data ? "正在生成" : "加载中"}{mode === "summary" ? "全文总结" : mode === "xiaohongshu" ? "小红书图文" : "知识树"}...
         </p>
-        <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>首次生成可能需要 30-60 秒</p>
+        {!data && <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>检查缓存中，若无缓存请点击生成</p>}
       </div>
     );
   }

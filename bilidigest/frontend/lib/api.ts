@@ -42,14 +42,14 @@ export async function createAsset(url: string) {
   return data;
 }
 
-export async function listAssets() {
-  const res = await fetchWithTimeout(`${BASE_URL}/api/assets`);
+export async function listAssets(signal?: AbortSignal) {
+  const res = await fetchWithTimeout(`${BASE_URL}/api/assets`, { signal });
   if (!res.ok) throw new Error("获取列表失败");
   return res.json();
 }
 
-export async function getAsset(bvId: string) {
-  const res = await fetchWithTimeout(`${BASE_URL}/api/assets/${bvId}`);
+export async function getAsset(bvId: string, signal?: AbortSignal) {
+  const res = await fetchWithTimeout(`${BASE_URL}/api/assets/${bvId}`, { signal });
   if (!res.ok) throw new Error("获取资产失败");
   return res.json();
 }
@@ -74,8 +74,8 @@ export async function generateContent(assetIds: string[], mode: string, userProm
   return data;
 }
 
-export async function getCachedGeneration(assetId: string, mode: string) {
-  const res = await fetchWithTimeout(`${BASE_URL}/api/generate/cache?asset_id=${assetId}&mode=${mode}`);
+export async function getCachedGeneration(assetId: string, mode: string, signal?: AbortSignal) {
+  const res = await fetchWithTimeout(`${BASE_URL}/api/generate/cache?asset_id=${assetId}&mode=${mode}`, { signal });
   if (!res.ok) return null;
   const data = await res.json();
   return data.cached ? data : null;
