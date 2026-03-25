@@ -1,16 +1,31 @@
 export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-/** 带超时的 fetch 封装，默认 30 秒 */
-async function fetchWithTimeout(url: string, options?: RequestInit, timeoutMs = 30000): Promise<Response> {
+/** 带超时的 fetch 封装，默认 30 秒，支持外部 AbortSignal */
+async function fetchWithTimeout(url: string, options?: RequestInit & { signal?: AbortSignal }, timeoutMs = 30000): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  // 外部 signal 联动：外部取消时同步取消本次请求
+  const externalSignal = options?.signal;
+  let onExternalAbort: (() => void) | undefined;
+  if (externalSignal) {
+    if (externalSignal.aborted) { clearTimeout(timer); throw new Error("请求已取消"); }
+    onExternalAbort = () => controller.abort();
+    externalSignal.addEventListener("abort", onExternalAbort);
+  }
+
   try {
-    return await fetch(url, { ...options, signal: controller.signal });
+    const { signal: _, ...rest } = options || {};
+    return await fetch(url, { ...rest, signal: controller.signal });
   } catch (e: any) {
-    if (e.name === "AbortError") throw new Error("请求超时，请检查后端是否正在运行");
+    if (e.name === "AbortError") {
+      if (externalSignal?.aborted) throw new Error("请求已取消");
+      throw new Error("请求超时，请检查后端是否正在运行");
+    }
     throw new Error(`网络错误：无法连接到后端服务 (${e.message})`);
   } finally {
     clearTimeout(timer);
+    if (externalSignal && onExternalAbort) externalSignal.removeEventListener("abort", onExternalAbort);
   }
 }
 
@@ -47,11 +62,12 @@ export async function deleteAsset(bvId: string) {
 
 /* ── Generate ── */
 
-export async function generateContent(assetIds: string[], mode: string, userPrompt?: string) {
+export async function generateContent(assetIds: string[], mode: string, userPrompt?: string, signal?: AbortSignal) {
   const res = await fetchWithTimeout(`${BASE_URL}/api/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ asset_ids: assetIds, mode, user_prompt: userPrompt || null }),
+    signal,
   }, 180000);
   const data = await res.json();
   if (!res.ok) throw new Error(data.detail || "生成失败");
@@ -67,11 +83,12 @@ export async function getCachedGeneration(assetId: string, mode: string) {
 
 /* ── Query ── */
 
-export async function queryAsset(assetIds: string[], question: string) {
+export async function queryAsset(assetIds: string[], question: string, signal?: AbortSignal) {
   const res = await fetchWithTimeout(`${BASE_URL}/api/query`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ asset_ids: assetIds, question }),
+    signal,
   }, 120000);
   const data = await res.json();
   if (!res.ok) throw new Error(data.detail || "查询失败");

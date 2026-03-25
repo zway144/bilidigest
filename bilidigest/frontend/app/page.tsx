@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   createAsset, listAssets, getAsset, deleteAsset,
   generateContent, queryAsset, listHistory, deleteHistory, getCachedGeneration, BASE_URL,
@@ -570,6 +570,12 @@ function DetailPage({ asset, onBack, onDelete, onRefresh }: {
   const [question, setQuestion] = useState("");
   const [asking, setAsking] = useState(false);
 
+  // 页面离开时取消所有进行中的请求
+  const abortRef = useRef<AbortController | null>(null);
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
+
   // 切换 Tab 时自动加载缓存
   useEffect(() => {
     if (tab === "chat" || cacheChecked[tab] || genData[tab] || genLoading[tab]) return;
@@ -590,12 +596,16 @@ function DetailPage({ asset, onBack, onDelete, onRefresh }: {
 
   const handleGenerate = async (mode: string, force = false, prompt?: string) => {
     if (!force && genData[mode]) return;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setGenLoading(p => ({ ...p, [mode]: true }));
     setGenError(p => ({ ...p, [mode]: "" }));
     try {
-      const d = await generateContent([asset.id], mode, prompt || undefined);
+      const d = await generateContent([asset.id], mode, prompt || undefined, controller.signal);
       setGenData(p => ({ ...p, [mode]: d }));
     } catch (e: any) {
+      if (e.message === "请求已取消") return;
       setGenError(p => ({ ...p, [mode]: e.message }));
     } finally {
       setGenLoading(p => ({ ...p, [mode]: false }));
@@ -609,9 +619,10 @@ function DetailPage({ asset, onBack, onDelete, onRefresh }: {
     setQuestion("");
     setAsking(true);
     try {
-      const d = await queryAsset([asset.id], q);
+      const d = await queryAsset([asset.id], q, abortRef.current?.signal);
       setChatHistory(prev => [...prev, { role: "assistant", content: d.answer, refs: d.references }]);
     } catch (e: any) {
+      if (e.message === "请求已取消") return;
       setChatHistory(prev => [...prev, { role: "assistant", content: `查询失败: ${e.message}` }]);
     } finally { setAsking(false); }
   };
@@ -1098,6 +1109,12 @@ function HistoryPage({ mode, assets }: { mode?: string; assets?: any[] }) {
   const [generating, setGenerating] = useState(false);
   const [genResult, setGenResult] = useState<any>(null);
 
+  // 页面离开时取消进行中的请求
+  const abortRef = useRef<AbortController | null>(null);
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
+
   const readyAssets = (assets || []).filter((a: any) => a.status === "ready");
 
   const toggleAsset = (id: string) => {
@@ -1106,13 +1123,17 @@ function HistoryPage({ mode, assets }: { mode?: string; assets?: any[] }) {
 
   const handleMultiGenerate = async () => {
     if (!selectedAssetIds.length || !mode) return;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setGenerating(true); setGenResult(null);
     try {
-      const d = await generateContent(selectedAssetIds, mode, genPrompt || undefined);
+      const d = await generateContent(selectedAssetIds, mode, genPrompt || undefined, controller.signal);
       setGenResult(d);
       // 刷新历史列表
       listHistory(mode).then(d => setItems(d.items || [])).catch(() => {});
     } catch (e: any) {
+      if (e.message === "请求已取消") return;
       alert(`生成失败: ${e.message}`);
     } finally { setGenerating(false); }
   };

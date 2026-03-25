@@ -226,7 +226,7 @@ bilidigest/
 
 ---
 
-## 开发迭代记录（共 13 次有效迭代）
+## 开发迭代记录（共 14 次有效迭代）
 
 | 迭代 | 内容 | 反馈 → 改动 |
 |------|------|-------------|
@@ -243,5 +243,6 @@ bilidigest/
 | 11 | UI 全面重设计：Fraunces + Plus Jakarta Sans 字体、橙色强调色、奶白侧边栏、暖色调背景 | 深色侧栏 → 奶白；蓝色 → 橙色；冷色调 → 暖米白 |
 | 12 | 资产库摘要修复 | 右栏摘要来源从description改为generation_history的总结内容 |
 | 13 | UI全面重设计（Claude风格） | Cormorant Garamond + DM Sans 字体体系、暖纸张色背景、衬线加粗Logo带hover动效、新总结页居中聊天框布局 |
+| 14 | 前后端通信稳定性修复 | localhost→127.0.0.1 修复 Windows IPv6 解析导致 Failed to fetch；页面跳转时 AbortController 取消进行中请求 + 后端 middleware 静默处理客户端断连；知识树 JSON 解析增加兜底方案 |
 
 > 每次迭代的定义：完成一个功能闭环并通过验收，或发现问题并修复验证。
