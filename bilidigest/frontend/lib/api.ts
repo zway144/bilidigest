@@ -60,6 +60,12 @@ export async function deleteAsset(bvId: string) {
   return res.json();
 }
 
+export async function reprocessAsset(bvId: string) {
+  const res = await fetchWithTimeout(`${BASE_URL}/api/assets/${bvId}/reprocess`, { method: "POST" });
+  if (!res.ok) throw new Error("重新处理失败");
+  return res.json();
+}
+
 /* ── Generate ── */
 
 export async function generateContent(assetIds: string[], mode: string, userPrompt?: string, signal?: AbortSignal) {

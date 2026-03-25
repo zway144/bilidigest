@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  createAsset, listAssets, getAsset, deleteAsset,
+  createAsset, listAssets, getAsset, deleteAsset, reprocessAsset,
   generateContent, queryAsset, listHistory, deleteHistory, getCachedGeneration, BASE_URL,
 } from "@/lib/api";
 
@@ -673,6 +673,14 @@ function DetailPage({ asset, onBack, onDelete, onRefresh }: {
     try { await deleteAsset(asset.id); onDelete(); } catch {}
   };
 
+  const handleReprocess = async () => {
+    if (!confirm("确认重新处理该资产？")) return;
+    try {
+      await reprocessAsset(asset.id);
+      onRefresh();
+    } catch (e: any) { alert(`重新处理失败: ${e.message}`); }
+  };
+
   // iframe src state for in-page time jumping
   const [iframeSrc, setIframeSrc] = useState(`//player.bilibili.com/player.html?bvid=${asset.id}&autoplay=0&danmaku=0&high_quality=1`);
 
@@ -743,6 +751,15 @@ function DetailPage({ asset, onBack, onDelete, onRefresh }: {
               {isProcessing && <span className="text-xs ml-1 pulse-dot" style={{ color: "var(--blue)" }}>处理中...</span>}
               {asset.status === "failed" && asset.error_message && (
                 <span className="text-xs ml-1" style={{ color: "var(--red)" }}>{asset.error_message}</span>
+              )}
+              {asset.status === "failed" && (
+                <button
+                  onClick={handleReprocess}
+                  className="ml-auto text-xs px-3 py-1 rounded-lg border transition-colors"
+                  style={{ color: "var(--red)", borderColor: "var(--red)" }}
+                  onMouseOver={e => { e.currentTarget.style.background = "var(--red)"; e.currentTarget.style.color = "white"; }}
+                  onMouseOut={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--red)"; }}
+                >重新处理</button>
               )}
             </div>
             {asset.description && (

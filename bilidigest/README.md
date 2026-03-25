@@ -54,6 +54,24 @@ brew install ffmpeg yt-dlp
 sudo apt install ffmpeg && pip install yt-dlp
 ```
 
+### 首次运行：Whisper 模型下载
+
+**faster-whisper** 首次运行时会自动从 HuggingFace 下载 Whisper 模型（约 1-2GB）。
+
+**国内用户**：HuggingFace 访问受限，需要设置镜像：
+```bash
+# Windows PowerShell / macOS Linux
+setx HF_ENDPOINT "https://hf-mirror.com"
+# 或在 backend/.env 中添加：
+echo HF_ENDPOINT=https://hf-mirror.com >> backend/.env
+```
+
+**手动下载模型（可选）**：
+```bash
+# 指定使用 medium 模型（准确率更高）
+python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='Systran/faster-whisper-medium', local_dir='./models/faster-whisper-medium')"
+```
+
 ### 一键启动（推荐）
 
 ```bash
@@ -61,8 +79,10 @@ git clone https://github.com/zway144/bilidigest.git
 cd bilidigest
 ```
 
-- **Windows**：双击 `start.bat`
-- **Mac/Linux**：`chmod +x start.sh && ./start.sh`
+- **Windows**：双击 `start.bat`（自动检测并安装缺失的依赖）
+- **Mac/Linux**：`chmod +x start.sh && ./start.sh`（自动检测并安装缺失的依赖）
+
+> **首次运行注意**：后端首次启动时自动安装 Python 依赖，并下载 Whisper 模型（约 1-2GB）。国内用户需先设置 HuggingFace 镜像（见上方说明），否则模型下载会失败。
 
 ### 手动启动
 
