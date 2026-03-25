@@ -52,7 +52,7 @@ echo   端口 8000、3000 已释放
 echo.
 echo [2/4] 启动后端服务...
 cd backend
-start "BiliDigest-Backend" cmd /c "uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+start "BiliDigest-Backend" cmd /k "uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
 cd ..
 
 :: ── 3. 等待后端 ready（最多30秒）──
