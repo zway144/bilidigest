@@ -22,10 +22,17 @@ async def catch_client_disconnect(request: Request, call_next):
         return await call_next(request)
     except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
         logger.debug("客户端断开连接: %s %s", request.method, request.url.path)
-        return Response(status_code=499)
+        return Response(
+            status_code=499,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "*",
+                "Access-Control-Allow-Headers": "*",
+            },
+        )
 
 
-# CORS：允许前端 localhost:3000 访问
+# CORS：开发环境全部放行
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
