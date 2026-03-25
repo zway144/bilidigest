@@ -52,6 +52,11 @@ export default function App() {
     return () => clearInterval(t);
   }, [refreshList]);
 
+  // 从详情页/历史页返回首页时，立即刷新一次资产列表（不等轮询周期）
+  useEffect(() => {
+    if (page === "new") refreshList();
+  }, [page]);
+
   // goDetail 用 AbortController 防止快速切换时旧请求覆盖新数据
   const detailAbortRef = useRef<AbortController | null>(null);
 
