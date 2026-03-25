@@ -70,22 +70,26 @@ cd bilidigest
 # 1. 克隆项目
 git clone https://github.com/zway144/bilidigest.git && cd bilidigest
 
-# 2. 启动后端
+# 2. 配置环境变量
 cd backend
+cp .env.example .env          # 复制模板
+# 编辑 .env，填入你的 LLM API Key（默认使用 MiniMax API）
+
+# 3. 启动后端
 pip install -r requirements.txt
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
-# 3. 启动前端（新开一个终端）
+# 4. 启动前端（新开一个终端）
 cd frontend
 npm install
 npm run dev
 
-# 4. 打开浏览器访问 http://localhost:3000
+# 5. 打开浏览器访问 http://localhost:3000
 ```
 
 ### 注意事项
 
-- LLM API Key 已内置（仓库私有），无需额外配置
+- 需要配置 `LLM_API_KEY`，默认使用 MiniMax API，也可切换为 DeepSeek、OpenAI 等任何 OpenAI 兼容接口（修改 `.env` 中的 `LLM_BASE_URL` 和 `LLM_MODEL`）
 - 首次安装 Whisper 会自动下载 PyTorch（约 2-3GB），请耐心等待
 - 如遇端口占用，请关闭占用端口的程序或修改启动命令中的端口号
 
