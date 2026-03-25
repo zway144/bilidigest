@@ -246,7 +246,7 @@ bilidigest/
 
 ---
 
-## 开发迭代记录（共 15 次有效迭代）
+## 开发迭代记录（共 16 次有效迭代）
 
 | 迭代 | 内容 | 反馈 → 改动 |
 |------|------|-------------|
@@ -265,5 +265,6 @@ bilidigest/
 | 13 | UI全面重设计（Claude风格） | Cormorant Garamond + DM Sans 字体体系、暖纸张色背景、衬线加粗Logo带hover动效、新总结页居中聊天框布局 |
 | 14 | 前后端通信稳定性修复 | localhost→127.0.0.1 修复 Windows IPv6 解析导致 Failed to fetch；页面跳转时 AbortController 取消进行中请求 + 后端 middleware 静默处理客户端断连；知识树 JSON 解析增加兜底方案 |
 | 15 | 页面状态管理 + 数据格式兼容 | 视频切换 key= 重建组件防止内容错乱；React strict mode 缓存加载死锁修复（cancelled flag 替代 lifecycleAbort）；首页显示处理中视频状态；goDetail 竞态防护；generator.py _build_context 兼容 LLM 返回的多种数据格式（str/dict/数字/时间字符串）；refreshList 连续失败容忍 |
+| 16 | 启动脚本可靠性 + 前后端健壮性 | start.bat/start.sh 自动检测并安装 Python/Node 依赖；前端网络错误静默容忍不打断用户；Tab切换时 genError 正确清除；genLoading 状态分离（缓存检查不碰loading）；failed 资产显示"重新处理"按钮；faster-whisper 模型下载提示（国内需设 HF_ENDPOINT）； |
 
 > 每次迭代的定义：完成一个功能闭环并通过验收，或发现问题并修复验证。
