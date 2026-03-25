@@ -10,7 +10,7 @@ pip install -r requirements.txt
 echo.
 
 echo [2/4] 启动后端服务...
-start cmd /k "cd /d "%~dp0backend" && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+start "BiliDigest Backend" cmd /k "cd /d %~dp0backend && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
 cd /d "%~dp0"
 echo.
 
@@ -20,7 +20,7 @@ call npm install
 echo.
 
 echo [4/4] 启动前端服务...
-start cmd /k "cd /d "%~dp0frontend" && npm run dev"
+start "BiliDigest Frontend" cmd /k "cd /d %~dp0frontend && npm run dev"
 cd /d "%~dp0"
 echo.
 
