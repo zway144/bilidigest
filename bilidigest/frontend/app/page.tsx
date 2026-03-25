@@ -622,10 +622,11 @@ function DetailPage({ asset, onBack, onDelete, onRefresh }: {
     return () => { opAbortRef.current?.abort(); };
   }, []);
 
-  // 切换 Tab 时自动加载缓存：只负责更新 genData，不碰 genLoading
+  // 切换 Tab 时自动加载缓存：更新 genData，清除旧错误状态
   // genLoading 由 handleGenerate / handleAsk 管理（是否正在进行 LLM 请求）
   useEffect(() => {
     if (tab === "chat") return;
+    setGenError(p => ({ ...p, [tab]: "" }));  // 清除旧错误
     getCachedGeneration(asset.id, tab).then(cached => {
       if (cached) setGenData(p => ({ ...p, [tab]: cached }));
     }).catch(() => {});
