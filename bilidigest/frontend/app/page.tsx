@@ -617,21 +617,13 @@ function DetailPage({ asset, onBack, onDelete, onRefresh }: {
     return () => { opAbortRef.current?.abort(); };
   }, []);
 
-  // 切换 Tab 时自动加载缓存（用 cancelled flag 兼容 React strict mode 双重 effect）
+  // 切换 Tab 时自动加载缓存：只负责更新 genData，不碰 genLoading
+  // genLoading 由 handleGenerate / handleAsk 管理（是否正在进行 LLM 请求）
   useEffect(() => {
     if (tab === "chat") return;
-
-    let cancelled = false;
-    setGenLoading(p => ({ ...p, [tab]: true }));
-
     getCachedGeneration(asset.id, tab).then(cached => {
-      if (cancelled) return;
       if (cached) setGenData(p => ({ ...p, [tab]: cached }));
-    }).catch(() => {}).finally(() => {
-      if (!cancelled) setGenLoading(p => ({ ...p, [tab]: false }));
-    });
-
-    return () => { cancelled = true; };
+    }).catch(() => {});
   }, [tab, asset.id]);
 
   const handleGenerate = async (mode: string, force = false, prompt?: string) => {
