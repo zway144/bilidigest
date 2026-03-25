@@ -10,17 +10,43 @@ echo.
 :: ── 1. 清理旧进程 ──
 echo [1/4] 清理旧进程...
 
+:: 清理端口 8000
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr "LISTENING" ^| findstr ":8000 "') do (
     echo   关闭端口 8000 上的进程 PID=%%a
     taskkill /F /PID %%a >nul 2>&1
 )
 
+:: 清理端口 3000
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr "LISTENING" ^| findstr ":3000 "') do (
     echo   关闭端口 3000 上的进程 PID=%%a
     taskkill /F /PID %%a >nul 2>&1
 )
 
+:: 清理 Next.js 残留的锁文件（防止 "Another next dev server is already running"）
+if exist "frontend\.next\dev" (
+    echo   清理 Next.js 锁文件...
+    rmdir /s /q "frontend\.next\dev" >nul 2>&1
+)
+
 timeout /t 2 /nobreak >nul
+
+:: 验证端口 8000 已释放
+netstat -ano 2>nul | findstr "LISTENING" | findstr ":8000 " >nul 2>&1
+if %errorlevel%==0 (
+    echo   [错误] 端口 8000 仍被占用，请手动关闭占用程序
+    pause
+    exit /b 1
+)
+
+:: 验证端口 3000 已释放
+netstat -ano 2>nul | findstr "LISTENING" | findstr ":3000 " >nul 2>&1
+if %errorlevel%==0 (
+    echo   [错误] 端口 3000 仍被占用，请手动关闭占用程序
+    pause
+    exit /b 1
+)
+
+echo   端口 8000、3000 已释放
 
 :: ── 2. 启动后端 ──
 echo.
@@ -52,7 +78,14 @@ goto wait_backend
 
 :backend_ready
 
-:: ── 4. 启动前端 ──
+:: ── 4. 启动前端前二次确认端口 ──
+netstat -ano 2>nul | findstr "LISTENING" | findstr ":3000 " >nul 2>&1
+if %errorlevel%==0 (
+    echo   [错误] 端口 3000 在等待期间被其他进程占用
+    pause
+    exit /b 1
+)
+
 echo [4/4] 启动前端服务...
 cd frontend
 start "BiliDigest-Frontend" cmd /c "npm run dev"

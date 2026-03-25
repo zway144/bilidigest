@@ -8,22 +8,63 @@ echo "   BiliDigest 一键启动"
 echo "========================================"
 echo
 
+# ── 清理指定端口上的所有进程 ──
+kill_port() {
+    local port=$1
+    local pids
+    # 优先用 lsof，fallback 到 fuser
+    if command -v lsof >/dev/null 2>&1; then
+        pids=$(lsof -ti:"$port" 2>/dev/null || true)
+    elif command -v fuser >/dev/null 2>&1; then
+        pids=$(fuser "$port/tcp" 2>/dev/null | tr -s ' ' '\n' || true)
+    else
+        pids=$(ss -tlnp "sport = :$port" 2>/dev/null | grep -oP 'pid=\K[0-9]+' || true)
+    fi
+
+    if [ -n "$pids" ]; then
+        echo "  关闭端口 $port 上的进程 (PID: $(echo $pids | tr '\n' ' '))..."
+        for pid in $pids; do
+            # 杀掉整个进程组（包括 node 子进程）
+            kill -9 -- -"$pid" 2>/dev/null || kill -9 "$pid" 2>/dev/null || true
+        done
+        sleep 1
+    fi
+}
+
+# ── 验证端口已释放 ──
+check_port_free() {
+    local port=$1
+    if command -v lsof >/dev/null 2>&1; then
+        lsof -ti:"$port" >/dev/null 2>&1 && return 1 || return 0
+    elif command -v fuser >/dev/null 2>&1; then
+        fuser "$port/tcp" >/dev/null 2>&1 && return 1 || return 0
+    else
+        ss -tlnp "sport = :$port" 2>/dev/null | grep -q LISTEN && return 1 || return 0
+    fi
+}
+
 # ── 1. 清理旧进程 ──
 echo "[1/4] 清理旧进程..."
 
-# 杀掉占用 8000 端口的进程
-if lsof -ti:8000 >/dev/null 2>&1; then
-    echo "  关闭端口 8000 上的进程..."
-    lsof -ti:8000 | xargs kill -9 2>/dev/null || true
+kill_port 8000
+kill_port 3000
+
+# 清理 Next.js 残留的 PID 锁文件（防止 "Another next dev server is already running"）
+if [ -d "frontend/.next" ]; then
+    rm -rf frontend/.next/dev 2>/dev/null || true
+    echo "  清理 Next.js 锁文件"
 fi
 
-# 杀掉占用 3000 端口的进程
-if lsof -ti:3000 >/dev/null 2>&1; then
-    echo "  关闭端口 3000 上的进程..."
-    lsof -ti:3000 | xargs kill -9 2>/dev/null || true
+# 验证端口已释放
+if ! check_port_free 8000; then
+    echo "  [错误] 端口 8000 仍被占用，请手动检查: lsof -ti:8000"
+    exit 1
 fi
-
-sleep 1
+if ! check_port_free 3000; then
+    echo "  [错误] 端口 3000 仍被占用，请手动检查: lsof -ti:3000"
+    exit 1
+fi
+echo "  端口 8000、3000 已释放"
 
 # ── 2. 检查依赖 ──
 if [ ! -d "frontend/node_modules" ]; then
@@ -49,12 +90,19 @@ for i in $(seq 1 30); do
     if [ "$i" -eq 30 ]; then
         echo "  [错误] 后端启动超时（30秒），请检查错误信息"
         echo "  常见原因：pip 依赖未安装、.env 配置缺失、端口仍被占用"
+        kill $BACKEND_PID 2>/dev/null || true
         exit 1
     fi
     sleep 1
 done
 
-# ── 5. 启动前端 ──
+# ── 5. 启动前端前二次确认端口 ──
+if ! check_port_free 3000; then
+    echo "  [错误] 端口 3000 在等待期间被其他进程占用"
+    kill $BACKEND_PID 2>/dev/null || true
+    exit 1
+fi
+
 echo "[4/4] 启动前端服务..."
 cd frontend
 npm run dev &
@@ -68,11 +116,19 @@ echo "========================================"
 echo "   启动完成!"
 echo "   前端: http://localhost:3000"
 echo "   后端: http://localhost:8000"
-echo "   API文档: http://localhost:8000/docs"
 echo "========================================"
 echo
 echo "按 Ctrl+C 停止所有服务"
 
 # 捕获 Ctrl+C，同时停止前后端
-trap "echo '正在停止服务...'; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; exit 0" INT TERM
+cleanup() {
+    echo '正在停止服务...'
+    kill $FRONTEND_PID 2>/dev/null || true
+    kill $BACKEND_PID 2>/dev/null || true
+    # 确保子进程也被清理
+    kill_port 3000
+    kill_port 8000
+    exit 0
+}
+trap cleanup INT TERM
 wait
