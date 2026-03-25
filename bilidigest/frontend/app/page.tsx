@@ -35,20 +35,14 @@ export default function App() {
   const [connError, setConnError] = useState("");
   const [historyMode, setHistoryMode] = useState<string | undefined>(undefined);
 
-  // 连续失败计数，避免单次超时就显示错误横幅
-  const failCountRef = useRef(0);
-
   const refreshList = useCallback(async () => {
     try {
       const d = await listAssets();
       setAssets(d.assets || []);
-      setConnError("");
-      failCountRef.current = 0;
+      setConnError("");  // 清空连接错误
     } catch (e: any) {
-      if (e.message === "请求已取消") return;
-      failCountRef.current += 1;
-      // 连续失败 2 次以上才显示错误，避免后端繁忙时的单次超时误报
-      if (failCountRef.current >= 2) setConnError(e.message || "无法连接后端");
+      // 网络错误静默忽略，资产列表保持不变，后台继续重试
+      // 用户不会看到频繁的错误横幅打断操作
     }
   }, []);
 
