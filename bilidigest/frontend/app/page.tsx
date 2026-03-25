@@ -804,21 +804,23 @@ function DetailPage({ asset, onBack, onDelete, onRefresh }: {
                       style={{ borderColor: "var(--border)" }}
                       onKeyDown={e => { if (e.key === "Enter") { genData[tab] ? handleRegenerate(tab) : handleGenerate(tab, false, userPrompt); } }}
                     />
-                    {!genData[tab] && !genLoading[tab] ? (
-                      <button onClick={() => handleGenerate(tab, false, userPrompt)}
+                    {!genData[tab] ? (
+                      <button
+                        onClick={() => handleGenerate(tab, false, userPrompt)}
+                        disabled={!!genLoading[tab]}
                         className="flex-shrink-0 flex items-center gap-1.5 text-xs px-4 py-2 rounded-lg text-white transition-colors"
-                        style={{ background: "var(--accent)" }}
-                        onMouseOver={e => (e.currentTarget.style.background = "var(--accent-hover)")}
-                        onMouseOut={e => (e.currentTarget.style.background = "var(--accent)")}
-                      >生成</button>
-                    ) : genData[tab] && !genLoading[tab] ? (
-                      <button onClick={() => handleRegenerate(tab)}
+                        style={{ background: genLoading[tab] ? "var(--text-muted)" : "var(--accent)", cursor: genLoading[tab] ? "default" : "pointer" }}
+                      >{genLoading[tab] ? "生成中..." : "生成"}</button>
+                    ) : (
+                      <button
+                        onClick={() => handleRegenerate(tab)}
+                        disabled={!!genLoading[tab]}
                         className="flex-shrink-0 flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg border transition-colors"
-                        style={{ color: "var(--text-muted)", borderColor: "var(--border)" }}
-                        onMouseOver={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.borderColor = "var(--accent)"; }}
+                        style={{ color: genLoading[tab] ? "var(--text-faint)" : "var(--text-muted)", borderColor: "var(--border)", cursor: genLoading[tab] ? "default" : "pointer" }}
+                        onMouseOver={e => { if (!genLoading[tab]) { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.borderColor = "var(--accent)"; }}}
                         onMouseOut={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.borderColor = "var(--border)"; }}
-                      >🔄 重新生成</button>
-                    ) : null}
+                      >{genLoading[tab] ? "生成中..." : "🔄 重新生成"}</button>
+                    )}
                   </div>
                   <TabContent
                     mode={tab}
@@ -930,14 +932,30 @@ function fmtTime(sec: number) {
 function TabContent({ mode, data, loading, error, onGenerate, asset, onTimeClick }: {
   mode: string; data: any; loading: boolean; error: string; onGenerate: () => void; asset: any; onTimeClick?: (t: string) => void;
 }) {
+  // 正在重新生成（data 已有）：保留旧内容 + 顶部小指示条，不遮罩
+  if (loading && data) {
+    return (
+      <div>
+        <div className="flex items-center gap-2 px-4 py-2 rounded-lg mb-4 text-xs" style={{ background: "var(--blue-light)", color: "var(--blue)" }}>
+          <span className="spinner" style={{ width: 12, height: 12, borderWidth: 1.5, borderColor: "var(--blue)", borderTopColor: "transparent" }} />
+          正在生成新版，内容以旧版为准...
+        </div>
+        {mode === "summary" && <SummaryView data={data} onTimeClick={onTimeClick} />}
+        {mode === "xiaohongshu" && <XiaohongshuView data={data} />}
+        {mode === "mindmap" && <MindmapView data={data} />}
+      </div>
+    );
+  }
+
+  // 首次加载中（无 data）：显示 loading 遮罩
   if (loading) {
     return (
       <div className="text-center py-20">
         <div className="spinner mx-auto mb-4" style={{ width: 32, height: 32 }} />
         <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-          {data ? "正在生成" : "加载中"}{mode === "summary" ? "全文总结" : mode === "xiaohongshu" ? "小红书图文" : "知识树"}...
+          加载中{mode === "summary" ? "全文总结" : mode === "xiaohongshu" ? "小红书图文" : "知识树"}...
         </p>
-        {!data && <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>检查缓存中，若无缓存请点击生成</p>}
+        <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>检查缓存中，若无缓存请点击生成</p>
       </div>
     );
   }
