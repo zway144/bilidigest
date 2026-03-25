@@ -275,5 +275,20 @@ async def generate_mindmap(asset: dict, user_prompt: str | None = None) -> dict:
         user_prompt_section=user_section,
     )
 
-    tree = await llm_client.chat_json(MINDMAP_SYSTEM, prompt)
+    try:
+        tree = await llm_client.chat_json(MINDMAP_SYSTEM, prompt)
+    except Exception:
+        # JSON 完全损坏时返回基于 transcript 的简单章节树作为兜底
+        transcripts = asset.get("transcripts", [])
+        if transcripts:
+            chunk_size = max(1, len(transcripts) // 5)
+            children = []
+            for i in range(0, min(len(transcripts), 25), chunk_size):
+                chunk = transcripts[i:i+chunk_size]
+                text = chunk[0].get("text", "")[:20] if chunk else ""
+                children.append({"name": text, "children": []})
+            tree = {"name": "内容概览", "children": children}
+        else:
+            tree = {"name": "暂无内容", "children": []}
+
     return {"tree": tree}
